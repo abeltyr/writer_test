@@ -1,10 +1,10 @@
 
-export const getCurrentlyEditedElement = () => {
+export const getCurrentlyEditedElement = (): { selection: Selection | null, node: any } => {
     const selection = window.getSelection();
-    if (!selection) return null;
+    if (!selection) return { node: null, selection: null };
 
     const node = selection.anchorNode;
-    return node && node.nodeType === 3 ? node.parentNode : node;
+    return { selection: selection, node: node && node.nodeType === 3 ? node.parentNode : node };
 }
 
 

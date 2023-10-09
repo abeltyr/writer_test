@@ -17,7 +17,7 @@ export const TypographySpan = ({
 
         return (
             <span
-                id={`editor-${editorState.id}`}
+                id={editorState.id}
                 key={editorState.id}
                 data-index-level={JSON.stringify(indexLevel)}
                 className={editorState.className}

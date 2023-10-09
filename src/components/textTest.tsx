@@ -1,5 +1,6 @@
 import { Editor } from '@/interface/editor';
-import { generate, getCurrentlyEditedElement, updateNestedArray, } from '@/utils/editors';
+import { generate, getCurrentlyEditedElement, appendNestedArray, updateNestedArrayContent, } from '@/utils/editors';
+import { updateCaretToMatch } from '@/utils/editors/editorData/cursor';
 import React, { useRef, useState } from 'react'
 import { v4 } from "uuid"
 
@@ -46,10 +47,10 @@ export const TextTest = () => {
                                 {
                                     id: v4(),
                                     type: "P",
-                                    className: "font-bold italic bg-white text-black rounded-md px-2 py-[2px] mx-2",
+                                    className: "font-bold italic",
                                     direction: "ltr",
                                     indent: 0,
-                                    content: "To Link",
+                                    content: "To ",
                                     format: null,
                                 },
                                 {
@@ -58,14 +59,13 @@ export const TextTest = () => {
                                     className: "",
                                     direction: "ltr",
                                     indent: 0,
-                                    content: "Welcome ",
+                                    content: "Link",
                                     format: null,
                                 },
                             ],
                             additional: {
                                 link: {
                                     href: "https://google.com",
-
                                 }
                             },
 
@@ -76,7 +76,41 @@ export const TextTest = () => {
                             className: "",
                             direction: "ltr",
                             indent: 0,
-                            content: "Data",
+                            content: "P:p Data",
+
+                        },
+                        {
+                            id: v4(),
+                            type: "InlineLink",
+                            className: "",
+                            direction: "ltr",
+                            indent: 0,
+                            // content: "To Link ",
+                            children: [
+                                {
+                                    id: v4(),
+                                    type: "P",
+                                    className: "font-bold italic",
+                                    direction: "ltr",
+                                    indent: 0,
+                                    content: "To ",
+                                    format: null,
+                                },
+                                {
+                                    id: v4(),
+                                    type: "P",
+                                    className: "",
+                                    direction: "ltr",
+                                    indent: 0,
+                                    content: "Link",
+                                    format: null,
+                                },
+                            ],
+                            additional: {
+                                link: {
+                                    href: "https://google.com",
+                                }
+                            },
 
                         },
                     ],
@@ -96,124 +130,151 @@ export const TextTest = () => {
 
     })
 
+    let indexLevel: number[];
+    let currentPosition: number;
+    let id: string;
+
     const contentEditableRef = useRef(null);
     return (
         <div
-            className={`py-2 outline-none cursor-text block whitespace-pre-wrap break-words select-text `}
+            className={`py-2 px-4 outline-none cursor-text block whitespace-pre-wrap break-words select-text `}
             ref={contentEditableRef}
             suppressContentEditableWarning={true}
             contentEditable
 
             onInput={async (event) => {
-                const editedElement: any = getCurrentlyEditedElement()
-                if (editedElement) {
-                    let indexLevel = JSON.parse(editedElement.getAttribute("data-index-level"))
+                let { selection, node } = getCurrentlyEditedElement()
+                if (node && selection) {
+
+                    // console.log("node", node);
+                    // console.log("firstChild",);
+                    // console.log("lastChild", node.lastChild, node.lastChild.nodeType === 3);
 
 
-                    let id = editedElement.id;
+                    // unlink the current data set 
                     let updatedDataView: Editor = JSON.parse(JSON.stringify(dataView));
-                    updateNestedArray(updatedDataView.editorState.root, [...indexLevel], editedElement.textContent);
 
-                    // const range = 
-                    var selection = window.getSelection();
-                    let currentPosition = selection!.focusOffset;
-                    await setDataView(updatedDataView)
+                    if (node.firstChild.nodeType === 3) {
+                        currentPosition = selection!.focusOffset;
+                        updateNestedArrayContent(
+                            updatedDataView.editorState.root,
+                            [...indexLevel],
+                            node.textContent
+                        );
+                        console.log("updatedDataView nodeType 3", updatedDataView)
+                    }
+                    else {
+                        if (updatedDataView.editorState.root[indexLevel[0]].children) {
 
+                            console.log("next check", updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1])
+                            if (updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]) {
+                                id = updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]!.id!;
 
+                                if (updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]!.content) {
+                                    updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]!.content = " " + updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]!.content;
+                                }
+                                if (updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]!.children && updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]!.children!.length > 1) {
+                                    updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]!.children![0].content = " " + updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]!.children![0].content;
+                                }
+                                currentPosition = 1;
+                            } else {
 
-                    selection = window.getSelection();
-                    // contentEditableElement!.appendChild(target);
-                    // console.log("target", target, contentEditableElement);
-                    if (selection !== null) {
+                                id = v4();
+                                currentPosition = 1;
+                                updatedDataView.editorState.root[indexLevel[0]].children! = [
+                                    ...updatedDataView.editorState.root[indexLevel[0]].children!,
+                                    {
+                                        id: id,
+                                        type: "P",
+                                        className: "",
+                                        direction: "",
+                                        indent: 0,
+                                        content: " "
+                                    }
+                                ];
 
-                        var selection = window.getSelection();
-                        const contentEditableElement = document.getElementById(id);
-                        console.log("contentEditableElement", `editor-${id}`, contentEditableElement)
+                                console.log("updatedDataView nodeType 1", indexLevel[0], updatedDataView)
+                            }
 
-                        // contentEditableElement!.focus();
-                        const range = selection!.getRangeAt(0);
-                        range.setStart(contentEditableElement!.firstChild!, currentPosition)
-                        // range.setEnd(range.endContainer, currentPosition);
-                        range.collapse(true);
-                        selection!.removeAllRanges();
-                        console.log(range);
-                        selection!.addRange(range);
-                        contentEditableElement!.focus();
+                            // appendNestedArray(
+                            //     updatedDataView.editorState.root,
+                            //     [...index],
+                            //     {
+                            //         id: id,
+                            //         className: "",
+                            //         direction: "",
+                            //         indent: 0,
+                            //         type: "P",
+                            //         content: " test"
+                            //     }
+                            // );
+                        }
 
-
-                        // contentEditableElement!.focus();
-                        // // const range = selection!.getRangeAt(0);
-                        // // const range = document.createRange();
-                        // // range.setStart(contentEditableElement!, currentPosition);
-                        // // range.setEnd(range.endContainer, currentPosition);
-                        // range.collapse(false);
-                        // selection.removeAllRanges();
-                        // selection!.addRange(range);
-                        // contentEditableElement!.focus();
                     }
 
-                    // const cursorPosition = getCursorPosition(id);
-                    // const contentEditableElement = document.getElementById(id);
+                    await setDataView(updatedDataView)
+                    await updateCaretToMatch(id, currentPosition, selection!);
 
-                    // // const selection = window.getSelection();
-                    // // const range = selection!.getRangeAt(0);
+                    // console.log(updatedDataView);
+                    //     const lastChild = node.lastChild;
 
-                    // // // 
+                    //     console.log("lastChild", lastChild);
+                    //     // Check if the last child is a text node
+                    //     if (lastChild && lastChild.nodeType === 3) {
+                    //         const span = document.createElement('span');
+                    //         span.textContent = lastChild.textContent;
 
-
-                    // indexLevel = JSON.parse(editedElement.getAttribute("data-index-level"))
-                    // // contentEditableElement!.innerText = 
-                    // console.log(getNestedArray({ editorState: updatedDataView.editorState.root, indices: [...indexLevel] }));
-
-                    // console.log("contentEditableElement", contentEditableElement, cursorPosition);
-                    // if (selection!.rangeCount !== 0) {
-                    //     console.log(range);
-                    //     if (range) {
-                    //         range.setEnd(range.endContainer, cursorPosition - 5);
-                    //         range.collapse(false);
-                    //         selection!.removeAllRanges();
-                    //         selection!.addRange(range);
-                    //         contentEditableElement!.focus();
+                    //         // Replace the text node with the new span
+                    //         node.replaceChild(span, lastChild);
                     //     }
-                    // }
                 }
             }}
             onKeyDown={(event: React.KeyboardEvent<HTMLDivElement>) => {
 
-                // const editedElement: any = getCurrentlyEditedElement()
+                const { selection, node } = getCurrentlyEditedElement()
+                indexLevel = JSON.parse(node.getAttribute("data-index-level"))
 
+                // get the current Position of the caret to adjust latter
+                currentPosition = selection!.focusOffset;
+
+                id = node.id;
                 // let indexLevel = JSON.parse(editedElement.getAttribute("data-index-level"))
 
-                // if (event.key === "Enter") {
-                //     event.preventDefault();
+                if (event.code === "Enter") {
+                    event.preventDefault();
+                }
+                else if (event.code === "Space") {
+                    // get the index level of the span that is currently being edited from the root 
+
+
+                    // event.preventDefault();
+                }
+                else if (event.code === "Tab") {
+                    event.preventDefault();
+                }
+                else if (event.code === "Backspace") {
+                    // event.preventDefault();
+                }
 
                 //     let updatedDataView: Editor = JSON.parse(JSON.stringify(dataView));
-
-
-
-
                 //     let data = updatedDataView.editorState.root[indexLevel[0]];
-
                 //     data.id = v4();
-
                 //     updatedDataView.editorState.root.splice(indexLevel[0], 0, data);
-
                 //     setDataView(updatedDataView);
-
-
-
                 // }
                 // else if (event.key === "Tab") {
                 //     event.preventDefault();
-                // } else if (event.key === "Backspace") {
-                //     if (editedElement.textContent.length === 0) {
-                //         // event.preventDefault();
+                // } else 
+                // if (event.key === "Backspace") {
+                //     event.preventDefault();
+                //     if (node.textContent.length === 1) {
                 //     }
                 // }
 
             }}
             onPaste={(event) => {
-                console.log(event);
+                // console.log(event);
+                event.preventDefault();
             }}
             dangerouslySetInnerHTML={{
                 __html: generate(dataView)

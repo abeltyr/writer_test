@@ -22,7 +22,7 @@ export const TypographyA = ({
                 target={editorState.additional?.link?.target!}
                 key={editorState.id}
                 id={editorState.id}
-                className={editorState.className}
+                className={`${editorState.className} underline text-blue-300 italic`}
                 data-index-level={JSON.stringify(indexLevel)}
             >
                 <DefaultRun editorState={editorState} indexLevel={indexLevel} />
