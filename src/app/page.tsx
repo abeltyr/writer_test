@@ -3,8 +3,9 @@ import { ShowComponent } from '@/components/articles';
 import { resetServerContext, DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
 import { useWriter } from '@/context/writer';
 import { DownloadBox, MenuList, MoveDown, MoveUp } from '@/components/moveable';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { UploadBox } from '@/components/moveable/uploadBox';
+import { TextTest } from '@/components/textTest';
 
 export default function HomePage() {
   useEffect(() => {
@@ -30,7 +31,8 @@ export default function HomePage() {
       <div className='max-w-[1440px] min-w-[320px] py-20
      w-screen'>
         <article className="mx-auto space-y-6 min-h-screen px-0 xs:px-0 sm:px-2 md:px-16 lg:px-40 xl:px-56">
-          <DragDropContext onDragEnd={onDragEnd}>
+          <TextTest />
+          {/* <DragDropContext onDragEnd={onDragEnd}>
             <Droppable droppableId={droppableId}>
               {(provided, snapshot) => {
                 return <div
@@ -63,13 +65,13 @@ export default function HomePage() {
                 </div>
               }}
             </Droppable>
-          </DragDropContext>
+          </DragDropContext> */}
         </article>
       </div>
-      <MoveUp />
+      {/* <MoveUp />
       <MoveDown />
       <UploadBox />
-      <DownloadBox />
+      <DownloadBox /> */}
     </main>
   )
 }
