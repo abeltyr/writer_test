@@ -15,6 +15,19 @@ export const updateNestedArrayContent = (editorState: EditorStateChildren[], ind
     }
 }
 
+export const removeNestedArray = (editorState: EditorStateChildren[], indices: number[]): void => {
+    if (indices) {
+        // Get the first index
+        let indexData: number = indices.shift()!;
+        // If there are more indices, recurse deeper
+        if (indices.length > 0 && editorState[indexData].children != null) {
+            removeNestedArray(editorState[indexData].children!, [...indices]);
+        } else if (editorState[indexData].content) {
+            editorState.splice(indexData, 1);
+        }
+    }
+}
+
 
 export const appendNestedArray = (editorState: EditorStateChildren[], indices: number[], value: EditorStateChildren): void => {
     if (indices) {
@@ -42,7 +55,7 @@ export const getNestedArray = ({ editorState, indices }: { editorState: EditorSt
         // If there are more indices, recurse deeper
         if (indices.length > 0 && editorState[indexData] && editorState[indexData].children != null) {
             value = getNestedArray({ editorState: editorState[indexData].children!, indices: [...indices] });
-        } else if (editorState[indexData] && editorState[indexData]!.content) {
+        } else if (editorState[indexData]) {
             value = editorState[indexData];
         }
     }

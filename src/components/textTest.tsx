@@ -1,5 +1,5 @@
 import { Editor } from '@/interface/editor';
-import { generate, getCurrentlyEditedElement, appendNestedArray, updateNestedArrayContent, } from '@/utils/editors';
+import { generate, getCurrentlyEditedElement, appendNestedArray, updateNestedArrayContent, getNestedArray, removeNestedArray, } from '@/utils/editors';
 import { updateCaretToMatch } from '@/utils/editors/editorData/cursor';
 import React, { useRef, useState } from 'react'
 import { v4 } from "uuid"
@@ -133,6 +133,7 @@ export const TextTest = () => {
     let indexLevel: number[];
     let currentPosition: number;
     let id: string;
+    let removing = false;
 
     const contentEditableRef = useRef(null);
     return (
@@ -156,12 +157,49 @@ export const TextTest = () => {
 
                     if (node.firstChild.nodeType === 3) {
                         currentPosition = selection!.focusOffset;
-                        updateNestedArrayContent(
-                            updatedDataView.editorState.root,
-                            [...indexLevel],
-                            node.textContent
-                        );
-                        console.log("updatedDataView nodeType 3", updatedDataView)
+                        if (removing) {
+
+                            let nextIndex = [...indexLevel];
+                            console.log(indexLevel, nextIndex)
+                            removeNestedArray(updatedDataView.editorState.root,
+                                [...indexLevel],
+                            )
+
+
+                            if (nextIndex[nextIndex.length - 1] - 1 >= 0) {
+                                console.log(indexLevel, nextIndex)
+                                nextIndex[nextIndex.length - 1] = nextIndex[indexLevel.length - 1] - 1;
+                                const data = getNestedArray({ editorState: updatedDataView.editorState.root, indices: [...nextIndex] },)
+                                console.log(data, nextIndex);
+                                if (data) {
+
+                                    console.log("currentPosition", data.children, data.children!.length >= 1);
+                                    if (data.content) {
+                                        currentPosition = data!.content!.length!
+                                        id = data!.id
+                                    }
+
+                                    if (data.children && data.children.length >= 1) {
+                                        currentPosition = data!.children![data!.children.length - 1]!.content!.length!
+                                        console.log(data!.children![data!.children.length - 1]!.content!.length!);
+                                        id = data!.children![data!.children.length - 1]!.id
+                                    }
+
+                                }
+
+                            }
+
+                            else {
+
+                            }
+                        } else {
+                            updateNestedArrayContent(
+                                updatedDataView.editorState.root,
+                                [...indexLevel],
+                                node.textContent
+                            );
+                            console.log("updatedDataView nodeType 3", updatedDataView)
+                        }
                     }
                     else {
                         if (updatedDataView.editorState.root[indexLevel[0]].children) {
@@ -230,13 +268,12 @@ export const TextTest = () => {
                 }
             }}
             onKeyDown={(event: React.KeyboardEvent<HTMLDivElement>) => {
-
+                removing = false;
                 const { selection, node } = getCurrentlyEditedElement()
                 indexLevel = JSON.parse(node.getAttribute("data-index-level"))
 
                 // get the current Position of the caret to adjust latter
                 currentPosition = selection!.focusOffset;
-
                 id = node.id;
                 // let indexLevel = JSON.parse(editedElement.getAttribute("data-index-level"))
 
@@ -253,6 +290,10 @@ export const TextTest = () => {
                     event.preventDefault();
                 }
                 else if (event.code === "Backspace") {
+                    console.log("remove", node.textContent, node.textContent.length === 1)
+                    if (node.textContent.length === 1) {
+                        removing = true;
+                    }
                     // event.preventDefault();
                 }
 
