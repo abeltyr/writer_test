@@ -15,14 +15,14 @@ export const updateNestedArray = (editorState: EditorStateChildren[], indices: n
     }
 }
 
-export const updateNestedArrayContent = (editorState: EditorStateChildren[], indices: number[], value: any): void => {
-    if (indices) {
+export const updateNestedArrayContent = ({ editorState, indexLevel, value }: { editorState: EditorStateChildren[], indexLevel: number[], value: any }): void => {
+    if (indexLevel) {
         // Get the first index
-        let indexData: number = indices.shift()!;
+        let indexData: number = indexLevel.shift()!;
 
-        // If there are more indices, recurse deeper
-        if (indices.length > 0 && editorState[indexData].children != null) {
-            updateNestedArrayContent(editorState[indexData].children!, [...indices], value);
+        // If there are more indexLevel, recurse deeper
+        if (indexLevel.length > 0 && editorState[indexData].children != null) {
+            updateNestedArrayContent({ editorState: editorState[indexData].children!, indexLevel: [...indexLevel], value });
         } else if (editorState[indexData].content) {
             // If this is the last index, update the value
             editorState[indexData].content = value;

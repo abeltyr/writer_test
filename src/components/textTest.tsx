@@ -1,10 +1,10 @@
-import { spanChild } from '@/context/editor/typography';
 import { useEditor } from '@/context/editor/valueEditor';
-import { Editor, EditorStateChildren } from '@/interface/editor';
-import { generate, getCurrentlyEditedElement, appendNestedArray, updateNestedArrayContent, getNestedArray, removeNestedArray, updateNestedArray, } from '@/utils/editors';
+import { Editor } from '@/interface/editor';
+import { nextCreate, nextUpdate } from '@/utils/actions';
+import { check } from '@/utils/actions';
+import { getCurrentlyEditedElement, getNestedArray, updateNestedArrayContent, } from '@/utils/editors';
 import { updateCaretToMatch } from '@/utils/editors/editorData/cursor';
-import React, { useEffect, useRef, useState } from 'react'
-import { v4 } from "uuid"
+import React, { useEffect, useRef, } from 'react'
 
 export const TextTest = () => {
 
@@ -74,12 +74,15 @@ export const TextTest = () => {
                             //     }
                         } else {
                             // update the value of the state based on the input
-                            console.log(indexLevel, node.textContent, updatedDataView);
-                            // updateNestedArrayContent(
-                            //     updatedDataView.editorState.root,
-                            //     [...indexLevel],
-                            //     node.textContent
-                            // );
+
+                            console.log(node.textContent, indexLevel);
+                            updateNestedArrayContent(
+                                {
+                                    editorState: updatedDataView.editorState.root,
+                                    indexLevel: [...indexLevel],
+                                    value: node.textContent
+                                }
+                            );
                         }
                     }
                     else {
@@ -88,51 +91,34 @@ export const TextTest = () => {
                             let nextIndexLevel = [...indexLevel];
                             nextIndexLevel.pop();
                             nextIndexLevel[nextIndexLevel.length - 1] = nextIndexLevel[nextIndexLevel.length - 1] + 1;
-                            const fetchNextChild = getNestedArray({ editorState: updatedDataView.editorState.root, indexLevel: [...nextIndexLevel] })
-                            console.log("next check", fetchNextChild, node.textContent)
+                            // const fetchNextChild = getNestedArray({ editorState: updatedDataView.editorState.root, indexLevel: [...nextIndexLevel] })
 
-
-                            console.log(nextIndexLevel);
-                            if (fetchNextChild) {
-                                id = fetchNextChild!.id!;
-                                if (fetchNextChild!.content) {
-                                    fetchNextChild!.content = inputKey + fetchNextChild!.content;
-                                }
-                                if (fetchNextChild!.children && fetchNextChild!.children!.length >= 1) {
-                                    fetchNextChild!.children![0].content = inputKey + fetchNextChild!.children![0].content;
-                                }
-                                currentPosition = 1;
-                                updateNestedArray(
-                                    updatedDataView.editorState.root,
-                                    [...nextIndexLevel],
-                                    fetchNextChild
-                                );
-                                console.log("update the next field", updatedDataView)
-                            } else {
-                                id = v4();
-                                currentPosition = 1;
-
-                                const data: EditorStateChildren = {
-                                    id: id,
-                                    type: "P",
-                                    className: "",
-                                    direction: "",
-                                    indent: 0,
-                                    content: inputKey
-                                }
-                                const childElement = spanChild({
-                                    editorStateData: { ...data },
-                                    indexLevel: [...nextIndexLevel],
-                                })
-                                node.lastChild.remove();
-
-                                node.appendChild(childElement)
-                                appendNestedArray({
-                                    editorState: updatedDataView.editorState.root, indexLevel: indexLevel, value: data
-                                })
-                                console.log("create a new field", updatedDataView)
-                            }
-
+                            check({ node, nextIndexLevel, updatedDataView });
+                            // if (fetchNextChild) {
+                            //     const { updatedCurrentPosition, updatedId } = nextUpdate(
+                            //         {
+                            //             fetchNextChild,
+                            //             inputKey,
+                            //             nextIndexLevel,
+                            //             node,
+                            //             updatedDataView,
+                            //         }
+                            //     )
+                            //     id = updatedId;
+                            //     currentPosition = updatedCurrentPosition;
+                            // } else {
+                            //     const { createCurrentPosition, createId } = nextCreate(
+                            //         {
+                            //             inputKey,
+                            //             indexLevel,
+                            //             nextIndexLevel,
+                            //             node,
+                            //             updatedDataView,
+                            //         }
+                            //     )
+                            //     id = createId;
+                            //     currentPosition = createCurrentPosition;
+                            // }
                             // appendNestedArray(
                             //     updatedDataView.editorState.root,
                             //     [...index],
@@ -149,6 +135,7 @@ export const TextTest = () => {
 
                     }
 
+                    console.log("updatedDataView", updatedDataView);
                     await setEditorValue(updatedDataView)
                     // await updateCaretToMatch(id, currentPosition, selection!);
 
@@ -167,11 +154,9 @@ export const TextTest = () => {
                 }
 
 
-                console.log("input")
 
             }}
             onKeyUp={() => {
-                console.log("up")
             }}
             onKeyDown={(event: React.KeyboardEvent<HTMLDivElement>) => {
 
