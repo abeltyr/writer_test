@@ -1,146 +1,25 @@
+import { spanChild } from '@/context/editor/typography';
 import { useEditor } from '@/context/editor/valueEditor';
-import { Editor } from '@/interface/editor';
-import { generate, getCurrentlyEditedElement, appendNestedArray, updateNestedArrayContent, getNestedArray, removeNestedArray, } from '@/utils/editors';
+import { Editor, EditorStateChildren } from '@/interface/editor';
+import { generate, getCurrentlyEditedElement, appendNestedArray, updateNestedArrayContent, getNestedArray, removeNestedArray, updateNestedArray, } from '@/utils/editors';
 import { updateCaretToMatch } from '@/utils/editors/editorData/cursor';
 import React, { useEffect, useRef, useState } from 'react'
 import { v4 } from "uuid"
 
 export const TextTest = () => {
 
-    const { renderEditorDom } = useEditor();
+    const { editorValue, setEditorValue, editorDomValue, setEditorDomValue, renderEditorDom } = useEditor();
 
     useEffect(() => {
         renderEditorDom();
 
     }, [])
-    const [dataView, setDataView] = useState<Editor>({
-        id: "",
-        editorState: {
-            root: [
-                {
-                    id: v4(),
-                    type: "H1",
-                    className: "",
-                    direction: "ltr",
-                    indent: 0,
-                    content: "polas",
-                    format: null,
-                },
-                {
-                    id: v4(),
-                    type: "P",
-                    className: "",
-                    direction: "ltr",
-                    indent: 10,
-                    children: [
-                        {
-                            id: v4(),
-                            type: "P",
-                            className: "",
-                            direction: "ltr",
-                            indent: 0,
-                            content: "Welcome ",
-                            format: null,
-
-                        },
-                        {
-                            id: v4(),
-                            type: "InlineLink",
-                            className: "",
-                            direction: "ltr",
-                            indent: 0,
-                            // content: "To Link ",
-                            children: [
-                                {
-                                    id: v4(),
-                                    type: "P",
-                                    className: "font-bold italic",
-                                    direction: "ltr",
-                                    indent: 0,
-                                    content: "To ",
-                                    format: null,
-                                },
-                                {
-                                    id: v4(),
-                                    type: "P",
-                                    className: "",
-                                    direction: "ltr",
-                                    indent: 0,
-                                    content: "Link",
-                                    format: null,
-                                },
-                            ],
-                            additional: {
-                                link: {
-                                    href: "https://google.com",
-                                }
-                            },
-
-                        },
-                        {
-                            id: v4(),
-                            type: "P",
-                            className: "",
-                            direction: "ltr",
-                            indent: 0,
-                            content: "P:p Data",
-
-                        },
-                        {
-                            id: v4(),
-                            type: "InlineLink",
-                            className: "",
-                            direction: "ltr",
-                            indent: 0,
-                            // content: "To Link ",
-                            children: [
-                                {
-                                    id: v4(),
-                                    type: "P",
-                                    className: "font-bold italic",
-                                    direction: "ltr",
-                                    indent: 0,
-                                    content: "To ",
-                                    format: null,
-                                },
-                                {
-                                    id: v4(),
-                                    type: "P",
-                                    className: "",
-                                    direction: "ltr",
-                                    indent: 0,
-                                    content: "Link",
-                                    format: null,
-                                },
-                            ],
-                            additional: {
-                                link: {
-                                    href: "https://google.com",
-                                }
-                            },
-
-                        },
-                    ],
-                    format: "Start"
-                }
-            ],
-            rule: {
-                availableFeature: [],
-                maxChildrenAmount: null
-
-            }
-        },
-        editorVersion: "0.0.1",
-        lastSaved: new Date().toISOString(),
-        source: "Playground",
-        version: "1"
-
-    })
 
     let indexLevel: number[];
     let currentPosition: number;
     let id: string;
     let removing = false;
+    let inputKey = "";
 
     const contentEditableRef = useRef(null);
     return (
@@ -152,137 +31,155 @@ export const TextTest = () => {
             contentEditable
 
             onInput={async (event) => {
-                // let { selection, node } = getCurrentlyEditedElement()
-                // if (node && selection) {
+                let { selection, node } = getCurrentlyEditedElement()
+                if (node && selection) {
 
-                //     // console.log("node", node);
-                //     // console.log("firstChild",);
-                //     // console.log("lastChild", node.lastChild, node.lastChild.nodeType === 3);
+                    // unlink the current data set 
+                    let updatedDataView: Editor = JSON.parse(JSON.stringify(editorValue));
+
+                    // console.log("node", id, node)
+                    // console.log("lastChild", node.lastChild, node.lastChild.nodeType, node.lastChild.nodeType === 3)
+
+                    // console.log("firstChild", node.firstChild, node.firstChild.nodeType, node.firstChild.nodeType === 3)
+
+                    /**
+                     * check if the text input has been moved out of the child text mode 
+                     * to the to the parent side
+                     * */
+
+                    if (node.firstChild.nodeType === 3) {
+                        currentPosition = selection!.focusOffset;
+                        if (removing) {
+                            //     let nextIndex = [...indexLevel];
+                            //     removeNestedArray(updatedDataView.editorState.root,
+                            //         [...indexLevel],
+                            //     )
+                            //     if (nextIndex[nextIndex.length - 1] - 1 >= 0) {
+                            //         console.log(indexLevel, nextIndex)
+                            //         nextIndex[nextIndex.length - 1] = nextIndex[indexLevel.length - 1] - 1;
+                            //         const data = getNestedArray({ editorState: updatedDataView.editorState.root, indices: [...nextIndex] },)
+                            //         console.log(data, nextIndex);
+                            //         if (data) {
+                            //             console.log("currentPosition", data.children, data.children!.length >= 1);
+                            //             if (data.content) {
+                            //                 currentPosition = data!.content!.length!
+                            //                 id = data!.id
+                            //             }
+                            //             if (data.children && data.children.length >= 1) {
+                            //                 currentPosition = data!.children![data!.children.length - 1]!.content!.length!
+                            //                 console.log(data!.children![data!.children.length - 1]!.content!.length!);
+                            //                 id = data!.children![data!.children.length - 1]!.id
+                            //             }
+                            //         }
+                            //     }
+                        } else {
+                            // update the value of the state based on the input
+                            console.log(indexLevel, node.textContent, updatedDataView);
+                            // updateNestedArrayContent(
+                            //     updatedDataView.editorState.root,
+                            //     [...indexLevel],
+                            //     node.textContent
+                            // );
+                        }
+                    }
+                    else {
+                        if (updatedDataView.editorState.root[indexLevel[0]].children) {
+
+                            let nextIndexLevel = [...indexLevel];
+                            nextIndexLevel.pop();
+                            nextIndexLevel[nextIndexLevel.length - 1] = nextIndexLevel[nextIndexLevel.length - 1] + 1;
+                            const fetchNextChild = getNestedArray({ editorState: updatedDataView.editorState.root, indexLevel: [...nextIndexLevel] })
+                            console.log("next check", fetchNextChild, node.textContent)
 
 
-                //     // unlink the current data set 
-                //     let updatedDataView: Editor = JSON.parse(JSON.stringify(dataView));
+                            console.log(nextIndexLevel);
+                            if (fetchNextChild) {
+                                id = fetchNextChild!.id!;
+                                if (fetchNextChild!.content) {
+                                    fetchNextChild!.content = inputKey + fetchNextChild!.content;
+                                }
+                                if (fetchNextChild!.children && fetchNextChild!.children!.length >= 1) {
+                                    fetchNextChild!.children![0].content = inputKey + fetchNextChild!.children![0].content;
+                                }
+                                currentPosition = 1;
+                                updateNestedArray(
+                                    updatedDataView.editorState.root,
+                                    [...nextIndexLevel],
+                                    fetchNextChild
+                                );
+                                console.log("update the next field", updatedDataView)
+                            } else {
+                                id = v4();
+                                currentPosition = 1;
 
-                //     if (node.firstChild.nodeType === 3) {
-                //         currentPosition = selection!.focusOffset;
-                //         if (removing) {
+                                const data: EditorStateChildren = {
+                                    id: id,
+                                    type: "P",
+                                    className: "",
+                                    direction: "",
+                                    indent: 0,
+                                    content: inputKey
+                                }
+                                const childElement = spanChild({
+                                    editorStateData: { ...data },
+                                    indexLevel: [...nextIndexLevel],
+                                })
+                                node.lastChild.remove();
 
-                //             let nextIndex = [...indexLevel];
-                //             console.log(indexLevel, nextIndex)
-                //             removeNestedArray(updatedDataView.editorState.root,
-                //                 [...indexLevel],
-                //             )
+                                node.appendChild(childElement)
+                                appendNestedArray({
+                                    editorState: updatedDataView.editorState.root, indexLevel: indexLevel, value: data
+                                })
+                                console.log("create a new field", updatedDataView)
+                            }
+
+                            // appendNestedArray(
+                            //     updatedDataView.editorState.root,
+                            //     [...index],
+                            //     {
+                            //         id: id,
+                            //         className: "",
+                            //         direction: "",
+                            //         indent: 0,
+                            //         type: "P",
+                            //         content: " test"
+                            //     }
+                            // );
+                        }
+
+                    }
+
+                    await setEditorValue(updatedDataView)
+                    // await updateCaretToMatch(id, currentPosition, selection!);
+
+                    // console.log(updatedDataView);
+                    // const lastChild = node.lastChild;
+
+                    // console.log("lastChild", lastChild);
+                    // // Check if the last child is a text node
+                    // if (lastChild && lastChild.nodeType === 3) {
+                    //     const span = document.createElement('span');
+                    //     span.textContent = lastChild.textContent;
+
+                    //     // Replace the text node with the new span
+                    //     node.replaceChild(span, lastChild);
+                    // }
+                }
 
 
-                //             if (nextIndex[nextIndex.length - 1] - 1 >= 0) {
-                //                 console.log(indexLevel, nextIndex)
-                //                 nextIndex[nextIndex.length - 1] = nextIndex[indexLevel.length - 1] - 1;
-                //                 const data = getNestedArray({ editorState: updatedDataView.editorState.root, indices: [...nextIndex] },)
-                //                 console.log(data, nextIndex);
-                //                 if (data) {
+                console.log("input")
 
-                //                     console.log("currentPosition", data.children, data.children!.length >= 1);
-                //                     if (data.content) {
-                //                         currentPosition = data!.content!.length!
-                //                         id = data!.id
-                //                     }
-
-                //                     if (data.children && data.children.length >= 1) {
-                //                         currentPosition = data!.children![data!.children.length - 1]!.content!.length!
-                //                         console.log(data!.children![data!.children.length - 1]!.content!.length!);
-                //                         id = data!.children![data!.children.length - 1]!.id
-                //                     }
-
-                //                 }
-
-                //             }
-
-                //             else {
-
-                //             }
-                //         } else {
-                //             updateNestedArrayContent(
-                //                 updatedDataView.editorState.root,
-                //                 [...indexLevel],
-                //                 node.textContent
-                //             );
-                //             console.log("updatedDataView nodeType 3", updatedDataView)
-                //         }
-                //     }
-                //     else {
-                //         if (updatedDataView.editorState.root[indexLevel[0]].children) {
-
-                //             console.log("next check", updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1])
-                //             if (updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]) {
-                //                 id = updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]!.id!;
-
-                //                 if (updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]!.content) {
-                //                     updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]!.content = " " + updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]!.content;
-                //                 }
-                //                 if (updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]!.children && updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]!.children!.length > 1) {
-                //                     updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]!.children![0].content = " " + updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]!.children![0].content;
-                //                 }
-                //                 currentPosition = 1;
-                //             } else {
-
-                //                 id = v4();
-                //                 currentPosition = 1;
-                //                 updatedDataView.editorState.root[indexLevel[0]].children! = [
-                //                     ...updatedDataView.editorState.root[indexLevel[0]].children!,
-                //                     {
-                //                         id: id,
-                //                         type: "P",
-                //                         className: "",
-                //                         direction: "",
-                //                         indent: 0,
-                //                         content: " "
-                //                     }
-                //                 ];
-
-                //                 console.log("updatedDataView nodeType 1", indexLevel[0], updatedDataView)
-                //             }
-
-                //             // appendNestedArray(
-                //             //     updatedDataView.editorState.root,
-                //             //     [...index],
-                //             //     {
-                //             //         id: id,
-                //             //         className: "",
-                //             //         direction: "",
-                //             //         indent: 0,
-                //             //         type: "P",
-                //             //         content: " test"
-                //             //     }
-                //             // );
-                //         }
-
-                //     }
-
-                //     await setDataView(updatedDataView)
-                //     await updateCaretToMatch(id, currentPosition, selection!);
-
-                // console.log(updatedDataView);
-                //     const lastChild = node.lastChild;
-
-                //     console.log("lastChild", lastChild);
-                //     // Check if the last child is a text node
-                //     if (lastChild && lastChild.nodeType === 3) {
-                //         const span = document.createElement('span');
-                //         span.textContent = lastChild.textContent;
-
-                //         // Replace the text node with the new span
-                //         node.replaceChild(span, lastChild);
-                //     }
-                // }
+            }}
+            onKeyUp={() => {
+                console.log("up")
             }}
             onKeyDown={(event: React.KeyboardEvent<HTMLDivElement>) => {
 
-
-                event.preventDefault();
+                inputKey = event.key;
                 removing = false;
                 const { selection, node } = getCurrentlyEditedElement()
 
-                node.innerText = " event.target.value";
+
                 indexLevel = JSON.parse(node.getAttribute("data-index-level"))
 
                 // get the current Position of the caret to adjust latter
@@ -330,9 +227,6 @@ export const TextTest = () => {
                 // console.log(event);
                 event.preventDefault();
             }}
-        // dangerouslySetInnerHTML={{
-        //     __html: generate(dataView)
-        // }}
         />
 
     )
