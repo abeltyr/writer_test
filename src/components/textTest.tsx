@@ -1,14 +1,13 @@
 import { useEditor } from '@/context/editor/valueEditor';
-import { Editor } from '@/interface/editor';
-import { nextCreate, nextUpdate } from '@/utils/actions';
+import { Editor, EditorStateChildren } from '@/interface/editor';
 import { check } from '@/utils/actions';
-import { getCurrentlyEditedElement, getNestedArray, removeNestedArray, updateNestedArrayContent, } from '@/utils/editors';
+import { getCurrentlyEditedElement, getNestedArray, removeNestedArray, updateNestedArray, updateNestedArrayContent, } from '@/utils/editors';
 import { updateCaretToMatch } from '@/utils/editors/editorData/cursor';
 import React, { useEffect, useRef, } from 'react'
 
 export const TextTest = () => {
 
-    const { editorValue, setEditorValue, editorDomValue, setEditorDomValue, renderEditorDom } = useEditor();
+    const { editorValue, setEditorValue, renderEditorDom } = useEditor();
 
     useEffect(() => {
         renderEditorDom();
@@ -47,75 +46,65 @@ export const TextTest = () => {
                      * to the to the parent side
                      * */
 
+                    let cartUpdate = true
                     if (node.firstChild.nodeType === 3) {
+                        const newIndexLevel = indexLevel;
                         currentPosition = selection!.focusOffset;
                         if (removing) {
-                            console.log("removing", indexLevel)
-                            const newIndex = [...indexLevel];
+                            let removedData = getNestedArray({
+                                editorState: updatedDataView.editorState.root,
+                                indexLevel: [...newIndexLevel],
+                            })
 
+                            if (removedData) {
+                                if (newIndexLevel[newIndexLevel.length - 1] === 0) {
+                                    console.log("Last one")
+                                    newIndexLevel.pop();
+                                    removedData = getNestedArray({
+                                        editorState: updatedDataView.editorState.root,
+                                        indexLevel: [...newIndexLevel],
+                                    })
 
-                            const removedData = newIndex.pop() ?? 0;
-
-                            const parentData = getNestedArray({ editorState: updatedDataView.editorState.root, indexLevel: [...newIndex] })
-
-                            console.log("parentData", parentData, (parentData?.children?.length ?? 0) - 1, removedData)
-                            console.log("indexLevel", indexLevel)
-                            console.log("newIndex", newIndex)
-                            console.log("removedData", removedData)
-
-                            if ((parentData?.children?.length ?? 0) - 1 > removedData) {
-
-                                console.log("need to update the next ones")
-
+                                }
+                                const data: EditorStateChildren = {
+                                    id: removedData!.id,
+                                    type: "P",
+                                    className: "",
+                                    direction: "",
+                                    indent: removedData!.indent,
+                                }
+                                updateNestedArray({
+                                    editorState: updatedDataView.editorState.root,
+                                    indexLevel: [...newIndexLevel],
+                                    value: data,
+                                })
                             }
 
-                            // removeNestedArray(updatedDataView.editorState.root,
-                            //     [...indexLevel],
-                            // )
-                            // adjust the index level for the subsequent values
-
-                            // if (nextIndex[nextIndex.length - 1] - 1 >= 0) {
-                            //     console.log(indexLevel, nextIndex)
-                            //     nextIndex[nextIndex.length - 1] = nextIndex[indexLevel.length - 1] - 1;
-                            //     const data = getNestedArray({ editorState: updatedDataView.editorState.root, indices: [...nextIndex] },)
-                            //     console.log(data, nextIndex);
-                            //     if (data) {
-                            //         console.log("currentPosition", data.children, data.children!.length >= 1);
-                            //         if (data.content) {
-                            //             currentPosition = data!.content!.length!
-                            //             id = data!.id
-                            //         }
-                            //         if (data.children && data.children.length >= 1) {
-                            //             currentPosition = data!.children![data!.children.length - 1]!.content!.length!
-                            //             console.log(data!.children![data!.children.length - 1]!.content!.length!);
-                            //             id = data!.children![data!.children.length - 1]!.id
-                            //         }
-                            //     }
-                            // }
                         } else {
                             // update the value of the state based on the input
-                            updateNestedArrayContent(
-                                {
-                                    editorState: updatedDataView.editorState.root,
-                                    indexLevel: [...indexLevel],
-                                    value: node.textContent
-                                }
-                            );
+                            if (indexLevel != null) {
+                                updateNestedArrayContent(
+                                    {
+                                        editorState: updatedDataView.editorState.root,
+                                        indexLevel: [...indexLevel],
+                                        value: node.textContent
+                                    }
+                                );
+                            }
                         }
                     }
                     else {
                         if (updatedDataView.editorState.root[indexLevel[0]].children) {
-                            let nextIndexLevel = [...indexLevel];
-                            nextIndexLevel.pop();
-                            nextIndexLevel[nextIndexLevel.length - 1] = nextIndexLevel[nextIndexLevel.length - 1] + 1;
-                            check({ node, nextIndexLevel, updatedDataView })
+                            check({ node, indexLevel, updatedDataView })
+                            cartUpdate = false;
                         }
 
                     }
 
                     setEditorValue(updatedDataView)
-                    updateCaretToMatch(id, currentPosition, selection!);
-                    // console.log("updatedDataView", updatedDataView);
+                    if (cartUpdate) updateCaretToMatch(id, currentPosition, selection!);
+                    console.log("updatedDataView", updatedDataView);
+
                 }
 
 
@@ -144,18 +133,31 @@ export const TextTest = () => {
                 if (event.code === "Enter") {
                     event.preventDefault();
                 }
-
-                else if (event.code === "Space") {
-                }
                 else if (event.code === "Tab") {
                     event.preventDefault();
                 }
-
                 else if (event.code === "Backspace") {
-                    const childNode = document.getElementById(id);
-                    if (node.textContent.length === 1) {
-                        removing = true;
+
+                    event.preventDefault();
+
+
+                    let deletedText = ""
+                    if (selection) {
+                        const range = selection!.getRangeAt(0);
+                        deletedText = range.toString();
+                        console.log("deletedText", deletedText);
                     }
+
+                    if (node.textContent.length === 1 || node.textContent === deletedText) {
+                        removing = true;
+                        event.preventDefault()
+                        node?.remove()
+                    }
+                    console.log("childNode", node);
+                }
+
+                else if (event.code === "Space") {
+
                 }
 
             }}

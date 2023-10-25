@@ -1,9 +1,18 @@
 import { EditorStateChildren } from '@/interface/editor';
 
-export const spanChild = ({ editorStateData, indexLevel }: { editorStateData: EditorStateChildren, indexLevel: number[], }) => {
+export const spanChild = (
+    {
+        editorStateData,
+        indexLevel,
+    }: {
+        editorStateData: EditorStateChildren,
+        indexLevel: number[],
+    }
+) => {
+    const id = `editor-${editorStateData.id}`;
     const element = document.createElement("span");
-    element.setAttribute('id', `editor-${editorStateData.id}`);
-    element.setAttribute('key', `editor-${editorStateData.id}`);
+    element.setAttribute('id', id);
+    element.setAttribute('key', id);
     element.setAttribute(
         'data-index-level',
         JSON.stringify(indexLevel)

@@ -1,7 +1,6 @@
 'use client'
 
 import { Editor, EditorStateChildren } from '@/interface/editor';
-import { alignmentCheck, indentSetup } from '@/utils/editors';
 import React, { useContext, useState } from "react";
 import { v4 } from "uuid";
 import { childIntegration } from './childIntegration';
@@ -138,14 +137,10 @@ const defaultEditorValue: Editor = {
 
 const initialValues: {
     editorValue: Editor,
-    editorDomValue: any,
-    setEditorDomValue: Function,
     setEditorValue: Function,
     renderEditorDom: Function,
 } = {
     editorValue: defaultEditorValue,
-    editorDomValue: {},
-    setEditorDomValue: () => { },
     setEditorValue: () => { },
     renderEditorDom: () => { }
 };
@@ -160,7 +155,6 @@ const useEditor = () => useContext(EditorContext);
 
 const EditorProvider: React.FC<Props> = ({ children }) => {
 
-    const [editorDomValue, setEditorDomValue] = useState<any>()
     const [editorValue, setEditorValue] = useState<Editor>(defaultEditorValue)
 
     const renderEditorDom = () => {
@@ -179,8 +173,6 @@ const EditorProvider: React.FC<Props> = ({ children }) => {
         <EditorContext.Provider
             value={{
                 editorValue,
-                editorDomValue,
-                setEditorDomValue,
                 setEditorValue,
                 renderEditorDom
             }}

@@ -1,9 +1,18 @@
 import { EditorStateChildren } from '@/interface/editor';
 
-export const linkElement = ({ editorStateData, indexLevel }: { editorStateData: EditorStateChildren, indexLevel: number[] }) => {
+export const linkElement = (
+    {
+        editorStateData,
+        indexLevel,
+    }: {
+        editorStateData: EditorStateChildren,
+        indexLevel: number[],
+    }) => {
+
     const element = document.createElement("a");
-    element.setAttribute('id', editorStateData.id);
-    element.setAttribute('key', editorStateData.id);
+    const id = editorStateData.id;
+    element.setAttribute('id', id);
+    element.setAttribute('key', id);
     element.setAttribute(
         'data-index-level',
         JSON.stringify(indexLevel)

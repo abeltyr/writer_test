@@ -1,14 +1,14 @@
 import { EditorStateChildren } from '@/interface/editor';
 
-export const updateNestedArray = (editorState: EditorStateChildren[], indices: number[], value: EditorStateChildren): void => {
-    if (indices) {
+export const updateNestedArray = ({ editorState, indexLevel, value }: { editorState: EditorStateChildren[], indexLevel: number[], value: EditorStateChildren }): void => {
+    if (indexLevel) {
         // Get the first index
-        let indexData: number = indices.shift()!;
+        let indexData: number = indexLevel.shift()!;
 
-        // If there are more indices, recurse deeper
-        if (indices.length > 0 && editorState[indexData].children != null) {
-            updateNestedArray(editorState[indexData].children!, [...indices], value);
-        } else if (editorState[indexData].content) {
+        // If there are more indexLevel, recurse deeper
+        if (indexLevel.length > 0 && editorState[indexData].children != null) {
+            updateNestedArray({ editorState: editorState[indexData].children!, indexLevel: [...indexLevel], value });
+        } else {
             // If this is the last index, update the value
             editorState[indexData] = value;
         }
@@ -30,13 +30,13 @@ export const updateNestedArrayContent = ({ editorState, indexLevel, value }: { e
     }
 }
 
-export const removeNestedArray = (editorState: EditorStateChildren[], indices: number[]): void => {
-    if (indices) {
+export const removeNestedArray = (editorState: EditorStateChildren[], indexLevel: number[]): void => {
+    if (indexLevel) {
         // Get the first index
-        let indexData: number = indices.shift()!;
-        // If there are more indices, recurse deeper
-        if (indices.length > 0 && editorState[indexData].children != null) {
-            removeNestedArray(editorState[indexData].children!, [...indices]);
+        let indexData: number = indexLevel.shift()!;
+        // If there are more indexLevel, recurse deeper
+        if (indexLevel.length > 0 && editorState[indexData].children != null) {
+            removeNestedArray(editorState[indexData].children!, [...indexLevel]);
         } else if (editorState[indexData].content) {
             editorState.splice(indexData, 1);
         }

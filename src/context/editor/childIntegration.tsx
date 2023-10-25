@@ -2,7 +2,15 @@
 import { EditorStateChildren } from '@/interface/editor';
 import { h1Element, linkElement, pElement, spanChild } from './typography';
 
-export const childIntegration = ({ editorStateData, indexLevel }: { editorStateData: EditorStateChildren, indexLevel: number[] }) => {
+export const childIntegration = (
+    {
+        editorStateData,
+        indexLevel,
+    }: {
+        editorStateData: EditorStateChildren,
+        indexLevel: number[],
+    }
+) => {
     let parentElement: HTMLElement;
     let childElement: HTMLElement;
 
@@ -22,7 +30,10 @@ export const childIntegration = ({ editorStateData, indexLevel }: { editorStateD
 
     if (editorStateData.children) {
         editorStateData.children.map((value, index) => {
-            childElement = childIntegration({ editorStateData: value, indexLevel: [...indexLevel, index] })
+            childElement = childIntegration({
+                editorStateData: value,
+                indexLevel: [...indexLevel, index]
+            })
             parentElement.appendChild(childElement);
         })
     }
