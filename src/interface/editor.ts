@@ -12,6 +12,10 @@ export type EditorState = {
   rule: EditorStateRule;
 };
 
+export interface IndexLevelType {
+  [id: string]: number[];
+}
+
 export type EditorStateChildren = {
   id: string;
   format?: TextAlignment;

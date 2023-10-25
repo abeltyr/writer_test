@@ -51,7 +51,7 @@ export const check = async (
                 await updateCaretToMatch(childElement.id, initialData?.length, selection!);
 
 
-                await appendNestedArray({
+                appendNestedArray({
                     editorState: updatedDataView.editorState.root,
                     indexLevel: [...nextIndexLevel],
                     value: data,

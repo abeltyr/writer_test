@@ -55,6 +55,7 @@ export const appendNestedArray = ({ value, editorState, indexLevel }: { editorSt
         } else {
             // If this is the last index, insert the value
             let valueData: EditorStateChildren[] = [];
+            console.log(editorState[indexData]);
             if (editorState[indexData].children) {
                 valueData = [...editorState[indexData].children!];
             }
