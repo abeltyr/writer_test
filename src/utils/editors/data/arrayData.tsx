@@ -30,14 +30,14 @@ export const updateNestedArrayContent = ({ editorState, indexLevel, value }: { e
     }
 }
 
-export const removeNestedArray = (editorState: EditorStateChildren[], indexLevel: number[]): void => {
+export const removeNestedArray = ({ editorState, indexLevel }: { editorState: EditorStateChildren[], indexLevel: number[] }): void => {
     if (indexLevel) {
         // Get the first index
         let indexData: number = indexLevel.shift()!;
         // If there are more indexLevel, recurse deeper
         if (indexLevel.length > 0 && editorState[indexData].children != null) {
-            removeNestedArray(editorState[indexData].children!, [...indexLevel]);
-        } else if (editorState[indexData].content) {
+            removeNestedArray({ editorState: editorState[indexData].children!, indexLevel: [...indexLevel] });
+        } else {
             editorState.splice(indexData, 1);
         }
     }

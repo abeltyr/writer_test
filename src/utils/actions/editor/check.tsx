@@ -30,7 +30,7 @@ export const check = async (
 
                 if (childNode instanceof Element) {
                     const selection = window.getSelection();
-                    updateCaretToMatch(childNode.id, initialData?.length, selection!);
+                    updateCaretToMatch({ id: childNode.id, currentPosition: initialData?.length, selection: selection! });
                 }
                 updateNestedArrayContent({
                     editorState: updatedDataView.editorState.root,
@@ -66,7 +66,7 @@ export const check = async (
                 await node.childNodes[i].remove();
                 await node.appendChild(childElement)
                 const selection = window.getSelection();
-                await updateCaretToMatch(childElement.id, initialData?.length, selection!);
+                await updateCaretToMatch({ id: childElement.id, currentPosition: initialData?.length, selection: selection! });
 
                 if (nextValue) {
                     nextValue.content = node.childNodes[i].textContent ?? "";
