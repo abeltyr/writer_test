@@ -1,13 +1,28 @@
 import { EditorStateChildren } from '@/interface/editor';
 
-export const updateNestedArrayContent = (editorState: EditorStateChildren[], indices: number[], value: any): void => {
-    if (indices) {
+export const updateNestedArray = ({ editorState, indexLevel, value }: { editorState: EditorStateChildren[], indexLevel: number[], value: EditorStateChildren }): void => {
+    if (indexLevel) {
         // Get the first index
-        let indexData: number = indices.shift()!;
+        let indexData: number = indexLevel.shift()!;
 
-        // If there are more indices, recurse deeper
-        if (indices.length > 0 && editorState[indexData].children != null) {
-            updateNestedArrayContent(editorState[indexData].children!, [...indices], value);
+        // If there are more indexLevel, recurse deeper
+        if (indexLevel.length > 0 && editorState[indexData].children != null) {
+            updateNestedArray({ editorState: editorState[indexData].children!, indexLevel: [...indexLevel], value });
+        } else {
+            // If this is the last index, update the value
+            editorState[indexData] = value;
+        }
+    }
+}
+
+export const updateNestedArrayContent = ({ editorState, indexLevel, value }: { editorState: EditorStateChildren[], indexLevel: number[], value: any }): void => {
+    if (indexLevel) {
+        // Get the first index
+        let indexData: number = indexLevel.shift()!;
+
+        // If there are more indexLevel, recurse deeper
+        if (indexLevel.length > 0 && editorState[indexData].children != null) {
+            updateNestedArrayContent({ editorState: editorState[indexData].children!, indexLevel: [...indexLevel], value });
         } else if (editorState[indexData].content) {
             // If this is the last index, update the value
             editorState[indexData].content = value;
@@ -15,46 +30,52 @@ export const updateNestedArrayContent = (editorState: EditorStateChildren[], ind
     }
 }
 
-export const removeNestedArray = (editorState: EditorStateChildren[], indices: number[]): void => {
-    if (indices) {
+export const removeNestedArray = ({ editorState, indexLevel }: { editorState: EditorStateChildren[], indexLevel: number[] }): void => {
+    if (indexLevel) {
         // Get the first index
-        let indexData: number = indices.shift()!;
-        // If there are more indices, recurse deeper
-        if (indices.length > 0 && editorState[indexData].children != null) {
-            removeNestedArray(editorState[indexData].children!, [...indices]);
-        } else if (editorState[indexData].content) {
+        let indexData: number = indexLevel.shift()!;
+        // If there are more indexLevel, recurse deeper
+        if (indexLevel.length > 0 && editorState[indexData].children != null) {
+            removeNestedArray({ editorState: editorState[indexData].children!, indexLevel: [...indexLevel] });
+        } else {
             editorState.splice(indexData, 1);
         }
     }
 }
 
 
-export const appendNestedArray = (editorState: EditorStateChildren[], indices: number[], value: EditorStateChildren): void => {
-    if (indices) {
+export const appendNestedArray = ({ value, editorState, indexLevel }: { editorState: EditorStateChildren[], indexLevel: number[], value: EditorStateChildren }): void => {
+    if (indexLevel) {
         // Get the first index
-        let indexData: number = indices.shift()!;
+        let indexData: number = indexLevel.shift()!;
 
-        // If there are more indices, recurse deeper
-        if (indices.length > 0 && editorState[indexData].children != null) {
-            appendNestedArray(editorState[indexData].children!, [...indices], value);
-        } else if (editorState[indexData].content) {
-            // If this is the last index, update the value
-            editorState[indexData].children = [...editorState[indexData].children!, value];
+        // If there are more indexLevel, recurse deeper
+        if (indexLevel.length > 1 && editorState[indexData].children != null) {
+            appendNestedArray({ editorState: editorState[indexData].children!, indexLevel: [...indexLevel], value });
+        } else {
+            // If this is the last index, insert the value
+            let valueData: EditorStateChildren[] = [];
+            console.log(editorState[indexData]);
+            if (editorState[indexData].children) {
+                valueData = [...editorState[indexData].children!];
+            }
+            editorState[indexData].children = [...valueData, value];
+            console.log("editorState", editorState)
         }
     }
 }
 
 
-export const getNestedArray = ({ editorState, indices }: { editorState: EditorStateChildren[], indices: number[] }): EditorStateChildren | null => {
+export const getNestedArray = ({ editorState, indexLevel }: { editorState: EditorStateChildren[], indexLevel: number[] }): EditorStateChildren | null => {
     let value: EditorStateChildren | null = null;
 
-    if (indices) {
+    if (indexLevel) {
         // Get the first index
-        let indexData: number = indices.shift()!;
+        let indexData: number = indexLevel.shift()!;
 
-        // If there are more indices, recurse deeper
-        if (indices.length > 0 && editorState[indexData] && editorState[indexData].children != null) {
-            value = getNestedArray({ editorState: editorState[indexData].children!, indices: [...indices] });
+        // If there are more indexLevel, recurse deeper
+        if (indexLevel.length > 0 && editorState[indexData] && editorState[indexData].children != null) {
+            value = getNestedArray({ editorState: editorState[indexData].children!, indexLevel: [...indexLevel] });
         } else if (editorState[indexData]) {
             value = editorState[indexData];
         }

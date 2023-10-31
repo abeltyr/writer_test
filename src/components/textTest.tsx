@@ -1,145 +1,35 @@
-import { Editor } from '@/interface/editor';
-import { generate, getCurrentlyEditedElement, appendNestedArray, updateNestedArrayContent, getNestedArray, removeNestedArray, } from '@/utils/editors';
+import { childIntegration } from '@/context/editor/childIntegration';
+import { spanChild } from '@/context/editor/typography';
+import { useEditor } from '@/context/editor/valueEditor';
+import { Editor, EditorStateChildren } from '@/interface/editor';
+import { check, cleanUpState, getSelectedElements, nullifyValue } from '@/utils/actions';
+import { removedValue } from '@/utils/actions/editor/removedValue';
+import { getCurrentlyEditedElement, getNestedArray, removeNestedArray, updateNestedArray, updateNestedArrayContent, } from '@/utils/editors';
 import { updateCaretToMatch } from '@/utils/editors/editorData/cursor';
-import React, { useRef, useState } from 'react'
-import { v4 } from "uuid"
+import React, { useEffect, } from 'react'
+import { v4 } from 'uuid';
 
 export const TextTest = () => {
 
-    const [dataView, setDataView] = useState<Editor>({
-        id: "",
-        editorState: {
-            root: [
-                {
-                    id: v4(),
-                    type: "H1",
-                    className: "",
-                    direction: "ltr",
-                    indent: 0,
-                    content: "",
-                    format: null,
-                },
-                {
-                    id: v4(),
-                    type: "P",
-                    className: "",
-                    direction: "ltr",
-                    indent: 10,
-                    children: [
-                        {
-                            id: v4(),
-                            type: "P",
-                            className: "",
-                            direction: "ltr",
-                            indent: 0,
-                            content: "Welcome ",
-                            format: null,
+    const { editorValue, setEditorValue, renderEditorDom } = useEditor();
 
-                        },
-                        {
-                            id: v4(),
-                            type: "InlineLink",
-                            className: "",
-                            direction: "ltr",
-                            indent: 0,
-                            // content: "To Link ",
-                            children: [
-                                {
-                                    id: v4(),
-                                    type: "P",
-                                    className: "font-bold italic",
-                                    direction: "ltr",
-                                    indent: 0,
-                                    content: "To ",
-                                    format: null,
-                                },
-                                {
-                                    id: v4(),
-                                    type: "P",
-                                    className: "",
-                                    direction: "ltr",
-                                    indent: 0,
-                                    content: "Link",
-                                    format: null,
-                                },
-                            ],
-                            additional: {
-                                link: {
-                                    href: "https://google.com",
-                                }
-                            },
+    useEffect(() => {
+        renderEditorDom();
 
-                        },
-                        {
-                            id: v4(),
-                            type: "P",
-                            className: "",
-                            direction: "ltr",
-                            indent: 0,
-                            content: "P:p Data",
-
-                        },
-                        {
-                            id: v4(),
-                            type: "InlineLink",
-                            className: "",
-                            direction: "ltr",
-                            indent: 0,
-                            // content: "To Link ",
-                            children: [
-                                {
-                                    id: v4(),
-                                    type: "P",
-                                    className: "font-bold italic",
-                                    direction: "ltr",
-                                    indent: 0,
-                                    content: "To ",
-                                    format: null,
-                                },
-                                {
-                                    id: v4(),
-                                    type: "P",
-                                    className: "",
-                                    direction: "ltr",
-                                    indent: 0,
-                                    content: "Link",
-                                    format: null,
-                                },
-                            ],
-                            additional: {
-                                link: {
-                                    href: "https://google.com",
-                                }
-                            },
-
-                        },
-                    ],
-                    format: "Start"
-                }
-            ],
-            rule: {
-                availableFeature: [],
-                maxChildrenAmount: null
-
-            }
-        },
-        editorVersion: "0.0.1",
-        lastSaved: new Date().toISOString(),
-        source: "Playground",
-        version: "1"
-
-    })
+    }, [])
 
     let indexLevel: number[];
     let currentPosition: number;
     let id: string;
-    let removing = false;
+    let inputKey = "";
 
-    const contentEditableRef = useRef(null);
+
+
     return (
         <div
+            id="editor"
             className={`py-2 px-4 outline-none cursor-text block whitespace-pre-wrap break-words select-text `}
-            ref={contentEditableRef}
+
             suppressContentEditableWarning={true}
             contentEditable
 
@@ -147,180 +37,211 @@ export const TextTest = () => {
                 let { selection, node } = getCurrentlyEditedElement()
                 if (node && selection) {
 
-                    // console.log("node", node);
-                    // console.log("firstChild",);
-                    // console.log("lastChild", node.lastChild, node.lastChild.nodeType === 3);
-
-
                     // unlink the current data set 
-                    let updatedDataView: Editor = JSON.parse(JSON.stringify(dataView));
+                    let updatedDataView: Editor = JSON.parse(JSON.stringify(editorValue));
 
-                    if (node.firstChild.nodeType === 3) {
-                        currentPosition = selection!.focusOffset;
-                        if (removing) {
+                    // console.log("node", id, node)
+                    // console.log("lastChild", node.lastChild, node.lastChild.nodeType, node.lastChild.nodeType === 3)
 
-                            let nextIndex = [...indexLevel];
-                            console.log(indexLevel, nextIndex)
-                            removeNestedArray(updatedDataView.editorState.root,
-                                [...indexLevel],
-                            )
+                    // console.log("firstChild", node.firstChild, node.firstChild.nodeType, node.firstChild.nodeType === 3)
 
+                    /**
+                     * check if the text input has been moved out of the child text mode 
+                     * to the to the parent side
+                     * */
 
-                            if (nextIndex[nextIndex.length - 1] - 1 >= 0) {
-                                console.log(indexLevel, nextIndex)
-                                nextIndex[nextIndex.length - 1] = nextIndex[indexLevel.length - 1] - 1;
-                                const data = getNestedArray({ editorState: updatedDataView.editorState.root, indices: [...nextIndex] },)
-                                console.log(data, nextIndex);
-                                if (data) {
-
-                                    console.log("currentPosition", data.children, data.children!.length >= 1);
-                                    if (data.content) {
-                                        currentPosition = data!.content!.length!
-                                        id = data!.id
-                                    }
-
-                                    if (data.children && data.children.length >= 1) {
-                                        currentPosition = data!.children![data!.children.length - 1]!.content!.length!
-                                        console.log(data!.children![data!.children.length - 1]!.content!.length!);
-                                        id = data!.children![data!.children.length - 1]!.id
-                                    }
-
-                                }
-
+                    let cartUpdate = true
+                    // update the value of the state based on the input
+                    if (node.firstChild.nodeType === 3 && indexLevel != null) {
+                        console.log("head");
+                        updateNestedArrayContent(
+                            {
+                                editorState: updatedDataView.editorState.root,
+                                indexLevel: [...indexLevel],
+                                value: node.textContent
                             }
-
-                            else {
-
-                            }
-                        } else {
-                            updateNestedArrayContent(
-                                updatedDataView.editorState.root,
-                                [...indexLevel],
-                                node.textContent
-                            );
-                            console.log("updatedDataView nodeType 3", updatedDataView)
-                        }
+                        );
                     }
                     else {
                         if (updatedDataView.editorState.root[indexLevel[0]].children) {
-
-                            console.log("next check", updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1])
-                            if (updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]) {
-                                id = updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]!.id!;
-
-                                if (updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]!.content) {
-                                    updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]!.content = " " + updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]!.content;
-                                }
-                                if (updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]!.children && updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]!.children!.length > 1) {
-                                    updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]!.children![0].content = " " + updatedDataView.editorState.root[indexLevel[0]].children![indexLevel[1] + 1]!.children![0].content;
-                                }
-                                currentPosition = 1;
-                            } else {
-
-                                id = v4();
-                                currentPosition = 1;
-                                updatedDataView.editorState.root[indexLevel[0]].children! = [
-                                    ...updatedDataView.editorState.root[indexLevel[0]].children!,
-                                    {
-                                        id: id,
-                                        type: "P",
-                                        className: "",
-                                        direction: "",
-                                        indent: 0,
-                                        content: " "
-                                    }
-                                ];
-
-                                console.log("updatedDataView nodeType 1", indexLevel[0], updatedDataView)
-                            }
-
-                            // appendNestedArray(
-                            //     updatedDataView.editorState.root,
-                            //     [...index],
-                            //     {
-                            //         id: id,
-                            //         className: "",
-                            //         direction: "",
-                            //         indent: 0,
-                            //         type: "P",
-                            //         content: " test"
-                            //     }
-                            // );
+                            check({ node, indexLevel, updatedDataView })
+                            cartUpdate = false;
                         }
 
                     }
 
-                    await setDataView(updatedDataView)
-                    await updateCaretToMatch(id, currentPosition, selection!);
+                    setEditorValue(updatedDataView)
+                    // if (cartUpdate) updateCaretToMatch({ id, currentPosition, selection });
+                    // console.log("updatedDataView", updatedDataView);
 
-                    // console.log(updatedDataView);
-                    //     const lastChild = node.lastChild;
-
-                    //     console.log("lastChild", lastChild);
-                    //     // Check if the last child is a text node
-                    //     if (lastChild && lastChild.nodeType === 3) {
-                    //         const span = document.createElement('span');
-                    //         span.textContent = lastChild.textContent;
-
-                    //         // Replace the text node with the new span
-                    //         node.replaceChild(span, lastChild);
-                    //     }
                 }
+
+
+
             }}
-            onKeyDown={(event: React.KeyboardEvent<HTMLDivElement>) => {
-                removing = false;
+            onKeyDown={async (event: React.KeyboardEvent<HTMLDivElement>) => {
+
+                //fetch the node and section
                 const { selection, node } = getCurrentlyEditedElement()
+
+                // get the id of the current editable htmlElement
+                id = node.id;
+
+                // get the caretPosition of the current editable htmlElement
+                currentPosition = selection!.focusOffset;
+
+                // get the index level of the current editable htmlElement
                 indexLevel = JSON.parse(node.getAttribute("data-index-level"))
 
-                // get the current Position of the caret to adjust latter
-                currentPosition = selection!.focusOffset;
-                id = node.id;
-                // let indexLevel = JSON.parse(editedElement.getAttribute("data-index-level"))
+                // get the imputed text on the current editable htmlElement
+                inputKey = event.key;
+
+                // pass the data to a new variable for modification
+                let updatedDataView: Editor = JSON.parse(JSON.stringify(editorValue));
+
+                // fetch all the selected texts
+                const selectedValues = getSelectedElements();
+
+                // if there is a selected text we need to update the variable accordingly 
+                if (selectedValues.length > 0) {
+                    event.preventDefault();
+                    let finalNodeData: any;
+
+                    // loop throw the selected text and remove them and there parent if they have been selected as a whole, 
+                    // if they are partially selected they are modified a 
+                    selectedValues.map((value, index) => {
+                        if (value.fullySelected) {
+                            removedValue({ updatedDataView, indexLevel: [...value.indexLevel], node: value.node })
+                        } else {
+                            let updatedText = "";
+                            if (index === 0) {
+                                updatedText = value.wholeText.slice(0, value.startPos);
+                                value.node.textContent = updatedText
+                                finalNodeData = value;
+                            }
+                            else if (index === selectedValues.length - 1) {
+                                updatedText = value.wholeText.slice(value.endPos, value.wholeText.length);
+                                value.node.textContent = value.wholeText.slice(value.endPos, value.wholeText.length)
+                                if (!finalNodeData) finalNodeData = value;
+                            }
+                            updateNestedArrayContent({ editorState: updatedDataView.editorState.root, indexLevel: [...indexLevel], value: updatedText })
+                        }
+                    });
+                    if (finalNodeData) {
+                        finalNodeData.node.focus();
+                        updateCaretToMatch({ currentPosition: finalNodeData.startPos, id: finalNodeData.id, selection: selection! })
+                    }
+
+
+
+                    if (selectedValues[0].indexLevel[0] != selectedValues[selectedValues.length - 1].indexLevel[0]) {
+                        console.log("on different level");
+                        let startIndex = selectedValues[0].indexLevel[0];
+                        let endIndex = selectedValues[selectedValues.length - 1].indexLevel[0];
+
+                        for (let indexData = startIndex + 1; indexData < endIndex; indexData++) {
+                            if (updatedDataView.editorState.root[indexData]) {
+                                if (updatedDataView.editorState.root[indexData].content) updatedDataView.editorState.root[indexData].content = undefined;
+                                if (updatedDataView.editorState.root[indexData].children) updatedDataView.editorState.root[indexData].children = undefined;
+                                if (updatedDataView.editorState.root[indexData].additional) updatedDataView.editorState.root[indexData].additional = undefined;
+                                const nodeData = document.getElementById(updatedDataView.editorState.root[indexData].id);
+                                console.log("nodeData", nodeData)
+                                nodeData?.remove();
+                                nullifyValue({
+                                    indexLevel: [indexData],
+                                    updatedDataView,
+                                })
+                            }
+                        }
+
+                        // check if the last one is being completed deleted
+
+                        // connect the first and last part to make them one data
+
+                        let firstValue = getNestedArray({ editorState: updatedDataView.editorState.root, indexLevel: [selectedValues[0].indexLevel[0]] });
+
+                        let lastValue = getNestedArray({ editorState: updatedDataView.editorState.root, indexLevel: [selectedValues[selectedValues.length - 1].indexLevel[0]] });
+
+
+                        // cleanUpState({ editorState: updatedDataView.editorState.root, indexLevel: [selectedValues[selectedValues.length - 1].indexLevel[0]] })
+
+                        console.log("updatedDataView", updatedDataView);
+
+                        if (lastValue && firstValue) {
+                            let data: EditorStateChildren;
+                            if (firstValue.content != null && !firstValue.children) {
+                                data = {
+                                    id: v4(),
+                                    type: "P",
+                                    className: "",
+                                    direction: "",
+                                    indent: 0,
+                                    content: firstValue.content
+                                }
+                                firstValue.children = [data];
+                                firstValue.content = undefined;
+                            } else if (firstValue.children) {
+                                cleanUpState({ editorState: updatedDataView.editorState.root, indexLevel: [selectedValues[0].indexLevel[0]] })
+                            }
+                            if (lastValue.content != null && !lastValue.children) {
+                                data = {
+                                    id: v4(),
+                                    type: "P",
+                                    className: "",
+                                    direction: "",
+                                    indent: 0,
+                                    content: lastValue.content
+                                }
+                                lastValue.children = [data];
+                                lastValue.content = undefined;
+                            } else if (lastValue.children) {
+                                cleanUpState({ editorState: updatedDataView.editorState.root, indexLevel: [selectedValues[selectedValues.length - 1].indexLevel[0]] })
+                            }
+                            firstValue.children = [...firstValue.children ?? [], ...lastValue.children ?? []]
+                            firstValue.content = undefined;
+                        } else {
+
+                        }
+
+
+
+                        console.log("updatedDataView", updatedDataView)
+
+                    }
+                }
+
+
+
 
                 if (event.code === "Enter") {
                     event.preventDefault();
-                }
-                else if (event.code === "Space") {
-                    // get the index level of the span that is currently being edited from the root 
-
-
-                    // event.preventDefault();
                 }
                 else if (event.code === "Tab") {
                     event.preventDefault();
                 }
                 else if (event.code === "Backspace") {
-                    console.log("remove", node.textContent, node.textContent.length === 1)
-                    if (node.textContent.length === 1) {
-                        removing = true;
+
+                    if (selectedValues.length === 0 && node.textContent.length === 1) {
+                        event.preventDefault()
+                        await removedValue({ indexLevel, node, updatedDataView });
+                        setEditorValue(updatedDataView)
                     }
-                    // event.preventDefault();
+
                 }
 
-                //     let updatedDataView: Editor = JSON.parse(JSON.stringify(dataView));
-                //     let data = updatedDataView.editorState.root[indexLevel[0]];
-                //     data.id = v4();
-                //     updatedDataView.editorState.root.splice(indexLevel[0], 0, data);
-                //     setDataView(updatedDataView);
-                // }
-                // else if (event.key === "Tab") {
-                //     event.preventDefault();
-                // } else 
-                // if (event.key === "Backspace") {
-                //     event.preventDefault();
-                //     if (node.textContent.length === 1) {
-                //     }
-                // }
+                else if (event.code === "Space") {
+
+                }
 
             }}
             onPaste={(event) => {
-                // console.log(event);
                 event.preventDefault();
-            }}
-            dangerouslySetInnerHTML={{
-                __html: generate(dataView)
             }}
         />
 
     )
 }
+
+
+
+

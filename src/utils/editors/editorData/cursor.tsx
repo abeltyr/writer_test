@@ -1,4 +1,4 @@
-export const updateCaretToMatch = (id: string, currentPosition: number, selection: Selection) => {
+export const updateCaretToMatch = ({ id, currentPosition, selection }: { id: string, currentPosition: number, selection: Selection }) => {
 
     if (selection !== null) {
 

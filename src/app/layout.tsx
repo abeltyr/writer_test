@@ -6,6 +6,8 @@ import { Footer, Header } from '@/components/layout';
 import { ThemeProvider } from '@/context/theme';
 import Head from 'next/head';
 import { WriterProvider } from '@/context/writer';
+import { StrictMode } from 'react';
+import { EditorProvider } from '@/context/editor/valueEditor';
 
 export const metadata = {
   title: 'Etlog Writer',
@@ -26,17 +28,21 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${fontData.className} relative h-screen overflow-x-hidden overflow-y-auto`} >
-        <ThemeProvider>
-          <WriterProvider>
-            <div className='w-full z-10 fixed'>
-              <Header />
-            </div>
-            <main className='min-h-screen'>
-              {children}
-            </main>
-            <Footer />
-          </WriterProvider>
-        </ThemeProvider>
+        <StrictMode>
+          <EditorProvider>
+            <ThemeProvider>
+              <WriterProvider>
+                <div className='w-full z-10 fixed'>
+                  <Header />
+                </div>
+                <main className='min-h-screen'>
+                  {children}
+                </main>
+                <Footer />
+              </WriterProvider>
+            </ThemeProvider>
+          </EditorProvider>
+        </StrictMode>
       </body>
     </html>
   )
