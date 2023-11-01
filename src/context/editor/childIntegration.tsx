@@ -1,13 +1,15 @@
 
-import { EditorStateChildren } from '@/interface/editor';
+import { Editor, EditorStateContentType } from '@/interface/editor';
 import { h1Element, linkElement, pElement, spanChild } from './typography';
 
 export const childIntegration = (
     {
         editorStateData,
+        rootEditorData,
         indexLevel,
     }: {
-        editorStateData: EditorStateChildren,
+        editorStateData: EditorStateContentType,
+        rootEditorData: Editor
         indexLevel: number[],
     }
 ) => {
@@ -29,9 +31,13 @@ export const childIntegration = (
     }
 
     if (editorStateData.children) {
-        editorStateData.children.map((value, index) => {
+
+        const editableStatChildren = rootEditorData.editorState.children[editorStateData.children];
+        editableStatChildren.map((value, index) => {
+            const editableState = rootEditorData.editorState.content[value.contentId];
             childElement = childIntegration({
-                editorStateData: value,
+                editorStateData: editableState,
+                rootEditorData: rootEditorData,
                 indexLevel: [...indexLevel, index]
             })
             parentElement.appendChild(childElement);

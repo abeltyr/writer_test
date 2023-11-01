@@ -9,23 +9,22 @@ export type Editor = {
 
 export type ValueType = {
   contentId: string;
-  parentId: string;
-  rootParent: boolean | false;
+  parentId?: string;
 };
 
 export type EditorState = {
-  root: ValueType[];
-  children: EditorChildren;
+  root: string[];
+  children: EditorChildrenType;
   content: EditorContentType;
   rule: EditorStateRule;
 };
 
-export type EditorChildren = {
-  id: ValueType[];
+export type EditorChildrenType = {
+  [contentId: string]: ValueType[];
 };
 
 export type EditorContentType = {
-  id: EditorStateContentType;
+  [id: string]: EditorStateContentType;
 };
 
 export type EditorStateContentType = {

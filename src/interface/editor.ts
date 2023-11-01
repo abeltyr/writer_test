@@ -1,29 +1,43 @@
 export type Editor = {
   id: string;
-  editorVersion: string;
   editorState: EditorState;
+  editorVersion: string;
   source: string;
   version: string;
   lastSaved: string;
 };
 
+export type ValueType = {
+  contentId: string;
+  parentId?: string;
+};
+
 export type EditorState = {
-  root: EditorStateChildren[];
+  root: { [id: string]: string };
+  children: EditorChildrenType;
+  content: EditorContentType;
   rule: EditorStateRule;
 };
 
-export type EditorStateChildren = {
+export type EditorChildrenType = {
+  [contentId: string]: ValueType[];
+};
+
+export type EditorContentType = {
+  [id: string]: EditorStateContentType;
+};
+
+export type EditorStateContentType = {
   id: string;
+  type: EditorType;
   format?: TextAlignment;
   mode?: string;
   className: string | "";
-  children?: EditorStateChildren[];
+  children?: string;
   content?: string;
-  type: EditorType;
   indent: number | 0;
   direction: string;
   disabled?: boolean;
-  ref?: any;
   additional?: {
     link?: EditorLinkAttrs;
     assets?: EditorAssetsAttrs;

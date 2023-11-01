@@ -1,11 +1,11 @@
-import { EditorStateChildren } from '@/interface/editor';
+import { EditorStateContentType } from '@/interface/editor';
 
 export const spanChild = (
     {
         editorStateData,
         indexLevel,
     }: {
-        editorStateData: EditorStateChildren,
+        editorStateData: EditorStateContentType,
         indexLevel: number[],
     }
 ) => {
@@ -19,6 +19,8 @@ export const spanChild = (
     );
     if (editorStateData.className)
         element.className = editorStateData.className;
+
+
     if (editorStateData.content)
         element.textContent = editorStateData.content;
     else {

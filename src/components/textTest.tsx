@@ -1,7 +1,7 @@
 import { childIntegration } from '@/context/editor/childIntegration';
 import { spanChild } from '@/context/editor/typography';
 import { useEditor } from '@/context/editor/valueEditor';
-import { Editor, EditorStateChildren } from '@/interface/editor';
+import { Editor, EditorContentType, EditorStateChildren } from '@/interface/editor';
 import { check, cleanUpState, getSelectedElements, nullifyValue } from '@/utils/actions';
 import { removedValue } from '@/utils/actions/editor/removedValue';
 import { getCurrentlyEditedElement, getNestedArray, removeNestedArray, updateNestedArray, updateNestedArrayContent, } from '@/utils/editors';
@@ -28,7 +28,7 @@ export const TextTest = () => {
     return (
         <div
             id="editor"
-            className={`py-2 px-4 outline-none cursor-text block whitespace-pre-wrap break-words select-text `}
+            className={` py-2 px-4 outline-none cursor-text block whitespace-pre-wrap break-words select-text `}
 
             suppressContentEditableWarning={true}
             contentEditable
@@ -36,6 +36,19 @@ export const TextTest = () => {
             onInput={async (event) => {
                 let { selection, node } = getCurrentlyEditedElement()
                 if (node && selection) {
+
+                    // fetch the content object from the 
+                    let editorContents: EditorContentType = JSON.parse(JSON.stringify(editorValue.editorState.content));
+
+                    // if this is a normal writing or
+
+
+                    //check if the edit is text and if so update the value of the editorContent based the id accordingly
+
+                    //if it is not text but rather an html check if it has a child and add the new part
+
+
+
 
                     // unlink the current data set 
                     let updatedDataView: Editor = JSON.parse(JSON.stringify(editorValue));
