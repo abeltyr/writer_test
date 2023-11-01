@@ -4,14 +4,24 @@ export const updateCaretToMatch = ({ id, currentPosition, selection }: { id: str
 
         const contentEditableElement = document.getElementById(id);
 
+
         if (contentEditableElement) {
+            let node = contentEditableElement;
+            console.log(contentEditableElement.firstChild, contentEditableElement.firstChild?.nodeType)
+
+            if (contentEditableElement.firstChild?.nodeType === 1) {
+                const firstChild = contentEditableElement.children[0];
+                if (firstChild instanceof HTMLElement) {
+                    node = firstChild;
+                }
+            }
 
             const range = selection!.getRangeAt(0);
 
-            if (contentEditableElement!.firstChild && contentEditableElement!.firstChild!.nodeType === 3)
-                range.setStart(contentEditableElement!.firstChild!, currentPosition)
+            if (node!.firstChild && node!.firstChild!.nodeType === 3)
+                range.setStart(node!.firstChild!, currentPosition)
             else
-                range.setStart(contentEditableElement!, 0)
+                range.setStart(node!, 0)
 
 
             range.collapse(true);
@@ -19,7 +29,7 @@ export const updateCaretToMatch = ({ id, currentPosition, selection }: { id: str
             selection!.removeAllRanges();
             selection!.addRange(range);
 
-            contentEditableElement!.focus();
+            node!.focus();
         }
     }
 }

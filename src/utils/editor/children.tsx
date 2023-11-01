@@ -1,45 +1,49 @@
-import { EditorChildrenType, ValueType } from '@/interface/editor';
+import { EditorChildrenType, EditorChildrenValueType, ValueType } from '@/interface/editor';
+import { getContent, removeContent } from './content';
 
 
-export let children: EditorChildrenType = {}
+let children: EditorChildrenType = {}
 
 
 export const updateChildren = (value: EditorChildrenType) => {
     children = value;
 }
 
-export const upsetChildren = ({ id, value }: { id: string, value: ValueType[] }) => {
-    children[id] = value;
-}
-
-export const addChildren = ({ id, value }: { id: string, value: ValueType }) => {
-    children[id].push(value);
-}
-
-export const removeChildren = ({ id }: { id: string, }) => {
-    delete children[id];
-}
-
-export const removeChildrenContent = async ({ id, contentId }: { id: string, contentId: string, }) => {
-    let data = children[id].filter(item => item.contentId !== contentId);
-    children[id] = [...data];
-
-    console.log(children[id])
+export const upsetChildren = ({ index, value }: { index: string, value: EditorChildrenValueType }) => {
+    children[index] = value;
 }
 
 
-export const getChildren = ({ id }: { id: string, }) => {
-    return children[id];
+export const upsetChildrenValue = ({ parentId, childId, value }: { parentId: string, childId: string, value: ValueType }) => {
+    children[parentId][childId] = value;
 }
 
-export const getChildrenIndex = ({ id, contentId }: { id: string, contentId: string }) => {
-    let indexData;
+export const addChildren = ({ parentId, childId, value }: { parentId: string, childId: string, value: ValueType }) => {
+    children[parentId][childId] = value;
+}
 
-    children[id].map((value, index) => {
-        if (value.contentId === contentId) {
-            indexData = index;
+export const removeChildrenContent = async ({ parentId, childId }: { parentId: string, childId: string }) => {
+    delete children[parentId][childId]
+    if (Object.keys(children[parentId]).length === 0) {
+        delete children[parentId];
+        const data = getContent({ id: parentId });
+        removeContent({ id: parentId })
+        if (data.parentId) {
+            delete children[data.parentId][parentId]
+            if (Object.values(children[data.parentId]).length === 0) {
+                delete children[data.parentId]
+                removeContent({ id: data.parentId })
+            }
         }
-    });
-
-    return indexData;
+    }
 }
+
+
+export const getAllChildren = () => {
+    return { ...children };
+}
+
+export const getChildren = ({ index }: { index: string, }) => {
+    return children[index];
+}
+

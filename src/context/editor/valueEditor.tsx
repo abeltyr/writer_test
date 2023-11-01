@@ -4,51 +4,51 @@ import { Editor } from '@/interface/editor';
 import React, { useContext, useEffect, useState } from "react";
 import { v4 } from "uuid";
 import { childIntegration } from './childIntegration';
-import { getContent, removeChildrenContent, updateChildren, updateContents } from '@/utils/editor';
+import { getContent, updateChildren, updateContents, updateRoot } from '@/utils/editor';
 
 const defaultEditorValue: Editor = {
     id: v4(),
     editorState: {
         children: {
-            "2": [
-                {
+            "2": {
+                "3": {
                     contentId: "3",
                     parentId: "2",
                 },
-                {
+                "4": {
                     contentId: "4",
                     parentId: "2",
                 },
-                {
+                "7": {
                     contentId: "7",
                     parentId: "2",
                 },
-                {
+                "8": {
                     contentId: "8",
                     parentId: "2",
                 }
-            ],
-            "4": [
-                {
+            },
+            "4": {
+                "5": {
                     contentId: "5",
                     parentId: "4",
                 },
-                {
+                "6": {
                     contentId: "6",
                     parentId: "4",
                 },
-            ]
+            }
             ,
-            "8": [
-                {
+            "8": {
+                "9": {
                     contentId: "9",
                     parentId: "8",
                 },
-                {
+                "10": {
                     contentId: "10",
                     parentId: "8",
                 },
-            ]
+            }
         },
         content: {
             "0": {
@@ -58,7 +58,7 @@ const defaultEditorValue: Editor = {
                 direction: "ltr",
                 indent: 0,
                 content: "Poland",
-                format: null,
+                format: null
             },
             "1": {
                 id: "1",
@@ -87,6 +87,7 @@ const defaultEditorValue: Editor = {
                 indent: 0,
                 content: "Welcome ",
                 format: null,
+                parentId: "2"
             },
             "4": {
                 id: "4",
@@ -96,6 +97,7 @@ const defaultEditorValue: Editor = {
                 indent: 0,
                 children: "4",
                 format: null,
+                parentId: "2",
                 additional: {
                     link: {
                         href: "https://google.com",
@@ -110,6 +112,7 @@ const defaultEditorValue: Editor = {
                 indent: 0,
                 content: "To ",
                 format: null,
+                parentId: "4",
             },
             "6": {
                 id: "6",
@@ -119,6 +122,7 @@ const defaultEditorValue: Editor = {
                 indent: 0,
                 content: "Link",
                 format: null,
+                parentId: "4",
             },
             "7": {
                 id: "7",
@@ -128,6 +132,7 @@ const defaultEditorValue: Editor = {
                 indent: 0,
                 content: " Pp Data ",
                 format: null,
+                parentId: "2",
             },
             "8":
             {
@@ -142,6 +147,7 @@ const defaultEditorValue: Editor = {
                         href: "https://google.com",
                     }
                 },
+                parentId: "2",
 
             },
             "9": {
@@ -152,6 +158,7 @@ const defaultEditorValue: Editor = {
                 indent: 0,
                 content: "To ",
                 format: null,
+                parentId: "8",
             },
             "10": {
                 id: "10",
@@ -161,6 +168,7 @@ const defaultEditorValue: Editor = {
                 indent: 0,
                 content: "Link",
                 format: null,
+                parentId: "8",
             },
         },
         root: {
@@ -204,8 +212,13 @@ const EditorProvider: React.FC<Props> = ({ children }) => {
     useEffect(() => {
         updateContents(editorValue.editorState.content);
         updateChildren(editorValue.editorState.children);
+        updateRoot(editorValue.editorState.root)
     })
     const renderEditorDom = () => {
+        updateContents(editorValue.editorState.content);
+        updateChildren(editorValue.editorState.children);
+        updateRoot(editorValue.editorState.root)
+
         const rootEditorElement = document.getElementById('editor');
         let count = 0
         Object.entries(editorValue.editorState.root).map(([key, value]) => {
@@ -213,8 +226,6 @@ const EditorProvider: React.FC<Props> = ({ children }) => {
             if (editableState) {
                 const parentElement = childIntegration({
                     editorStateData: editableState,
-                    rootEditorData: editorValue,
-                    indexLevel: [count]
                 })
                 if (rootEditorElement?.children[count] == null) {
                     rootEditorElement?.appendChild(parentElement)

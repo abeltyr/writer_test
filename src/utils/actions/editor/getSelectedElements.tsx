@@ -3,7 +3,6 @@ export const getSelectedElements = (): {
     node: HTMLElement,
     fullySelected: boolean,
     selectedText: string,
-    indexLevel: number[],
     wholeText: string,
     startPos: number,
     endPos: number
@@ -52,9 +51,6 @@ export const getSelectedElements = (): {
                     endPos = nodeRange.endOffset;
                 }
 
-
-                const indexLevel = JSON.parse(value.parentElement.getAttribute("data-index-level"))
-
                 const selectedText = nodeText!.slice(startPos, endPos);
 
                 // setup the data that is going to be deleted
@@ -63,7 +59,6 @@ export const getSelectedElements = (): {
                     node: value.parentElement,
                     fullySelected: selectedText === nodeText,
                     selectedText: selectedText,
-                    indexLevel,
                     wholeText: nodeText,
                     startPos,
                     endPos

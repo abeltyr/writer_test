@@ -13,14 +13,22 @@ export type ValueType = {
 };
 
 export type EditorState = {
-  root: { [id: string]: string };
+  root: EditorRootType;
   children: EditorChildrenType;
   content: EditorContentType;
   rule: EditorStateRule;
 };
 
+export type EditorRootType = {
+  [id: string]: string;
+};
+
 export type EditorChildrenType = {
-  [contentId: string]: ValueType[];
+  [parentId: string]: EditorChildrenValueType;
+};
+
+export type EditorChildrenValueType = {
+  [contentId: string]: ValueType;
 };
 
 export type EditorContentType = {
@@ -43,6 +51,7 @@ export type EditorStateContentType = {
     assets?: EditorAssetsAttrs;
     ytVideo?: EditorYoutubeVideoAttrs;
   };
+  parentId?: string;
 };
 
 export type EditorStateRule = {

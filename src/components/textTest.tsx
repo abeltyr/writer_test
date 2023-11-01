@@ -1,9 +1,10 @@
 import { childIntegration } from '@/context/editor/childIntegration';
 import { spanChild } from '@/context/editor/typography';
 import { useEditor } from '@/context/editor/valueEditor';
-import { Editor, EditorContentType, EditorStateChildren } from '@/interface/editor';
+import { Editor, EditorContentType } from '@/interface/editor';
 import { check, cleanUpState, getSelectedElements, nullifyValue } from '@/utils/actions';
 import { removedValue } from '@/utils/actions/editor/removedValue';
+import { getAllChildren, getChildren, getContent, getContents, getRoot, getRootParentIndex, getRoots, removeChildrenContent, removeContent, removeRoot, updateContents, updateValueContent, upsetContent } from '@/utils/editor';
 import { getCurrentlyEditedElement, getNestedArray, removeNestedArray, updateNestedArray, updateNestedArrayContent, } from '@/utils/editors';
 import { updateCaretToMatch } from '@/utils/editors/editorData/cursor';
 import React, { useEffect, } from 'react'
@@ -18,7 +19,6 @@ export const TextTest = () => {
 
     }, [])
 
-    let indexLevel: number[];
     let currentPosition: number;
     let id: string;
     let inputKey = "";
@@ -34,56 +34,26 @@ export const TextTest = () => {
             contentEditable
 
             onInput={async (event) => {
+
                 let { selection, node } = getCurrentlyEditedElement()
                 if (node && selection) {
-
-                    // fetch the content object from the 
-                    let editorContents: EditorContentType = JSON.parse(JSON.stringify(editorValue.editorState.content));
-
-                    // if this is a normal writing or
-
-
-                    //check if the edit is text and if so update the value of the editorContent based the id accordingly
-
-                    //if it is not text but rather an html check if it has a child and add the new part
-
-
-
-
-                    // unlink the current data set 
-                    let updatedDataView: Editor = JSON.parse(JSON.stringify(editorValue));
-
-                    // console.log("node", id, node)
-                    // console.log("lastChild", node.lastChild, node.lastChild.nodeType, node.lastChild.nodeType === 3)
-
-                    // console.log("firstChild", node.firstChild, node.firstChild.nodeType, node.firstChild.nodeType === 3)
-
-                    /**
-                     * check if the text input has been moved out of the child text mode 
-                     * to the to the parent side
-                     * */
-
                     let cartUpdate = true
-                    // update the value of the state based on the input
-                    if (node.firstChild.nodeType === 3 && indexLevel != null) {
-                        console.log("head");
-                        updateNestedArrayContent(
-                            {
-                                editorState: updatedDataView.editorState.root,
-                                indexLevel: [...indexLevel],
-                                value: node.textContent
-                            }
-                        );
+                    if (node.firstChild.nodeType === 3) {
+                        updateValueContent({
+                            id: id,
+                            value: node.textContent
+                        });
                     }
                     else {
-                        if (updatedDataView.editorState.root[indexLevel[0]].children) {
-                            check({ node, indexLevel, updatedDataView })
+                        const parentContent = getContent({ id: node.id })
+                        if (!parentContent.parentId) {
+                            //TODO: May need a future check
+                            check({ node })
                             cartUpdate = false;
                         }
 
                     }
 
-                    setEditorValue(updatedDataView)
                     // if (cartUpdate) updateCaretToMatch({ id, currentPosition, selection });
                     // console.log("updatedDataView", updatedDataView);
 
@@ -103,14 +73,8 @@ export const TextTest = () => {
                 // get the caretPosition of the current editable htmlElement
                 currentPosition = selection!.focusOffset;
 
-                // get the index level of the current editable htmlElement
-                indexLevel = JSON.parse(node.getAttribute("data-index-level"))
-
                 // get the imputed text on the current editable htmlElement
                 inputKey = event.key;
-
-                // pass the data to a new variable for modification
-                let updatedDataView: Editor = JSON.parse(JSON.stringify(editorValue));
 
                 // fetch all the selected texts
                 const selectedValues = getSelectedElements();
@@ -118,18 +82,30 @@ export const TextTest = () => {
                 // if there is a selected text we need to update the variable accordingly 
                 if (selectedValues.length > 0) {
                     event.preventDefault();
-                    let finalNodeData: any;
 
+                    const firstContent = JSON.parse(JSON.stringify(getContent({ id: selectedValues[0].id })))
+                    const lastContent = JSON.parse(JSON.stringify(getContent({ id: selectedValues[selectedValues.length - 1].id })))
+                    let firstContentIndex = "-1";
+                    let lastContentIndex = "-2";
+                    if (firstContent && lastContent) {
+                        firstContentIndex = getRootParentIndex({ contentValue: firstContent })
+                        lastContentIndex = getRootParentIndex({ contentValue: lastContent })
+                    }
+
+
+                    let finalNodeData: any;
                     // loop throw the selected text and remove them and there parent if they have been selected as a whole, 
                     // if they are partially selected they are modified a 
-                    selectedValues.map((value, index) => {
+                    selectedValues.map(async (value, index) => {
                         if (value.fullySelected) {
-                            removedValue({ updatedDataView, indexLevel: [...value.indexLevel], node: value.node })
+                            await removedValue({ node: value.node })
                         } else {
                             let updatedText = "";
+                            let updatedId = value.node.id;
                             if (index === 0) {
                                 updatedText = value.wholeText.slice(0, value.startPos);
                                 value.node.textContent = updatedText
+                                updatedId = value.node.id;
                                 finalNodeData = value;
                             }
                             else if (index === selectedValues.length - 1) {
@@ -137,89 +113,86 @@ export const TextTest = () => {
                                 value.node.textContent = value.wholeText.slice(value.endPos, value.wholeText.length)
                                 if (!finalNodeData) finalNodeData = value;
                             }
-                            updateNestedArrayContent({ editorState: updatedDataView.editorState.root, indexLevel: [...indexLevel], value: updatedText })
+                            await updateValueContent({ id: updatedId, value: updatedText })
                         }
                     });
-                    if (finalNodeData) {
-                        finalNodeData.node.focus();
-                        updateCaretToMatch({ currentPosition: finalNodeData.startPos, id: finalNodeData.id, selection: selection! })
-                    }
 
 
+                    if (firstContentIndex != lastContentIndex) {
+                        const roots = getRoots();
 
-                    if (selectedValues[0].indexLevel[0] != selectedValues[selectedValues.length - 1].indexLevel[0]) {
-                        console.log("on different level");
-                        let startIndex = selectedValues[0].indexLevel[0];
-                        let endIndex = selectedValues[selectedValues.length - 1].indexLevel[0];
-
-                        for (let indexData = startIndex + 1; indexData < endIndex; indexData++) {
-                            if (updatedDataView.editorState.root[indexData]) {
-                                if (updatedDataView.editorState.root[indexData].content) updatedDataView.editorState.root[indexData].content = undefined;
-                                if (updatedDataView.editorState.root[indexData].children) updatedDataView.editorState.root[indexData].children = undefined;
-                                if (updatedDataView.editorState.root[indexData].additional) updatedDataView.editorState.root[indexData].additional = undefined;
-                                const nodeData = document.getElementById(updatedDataView.editorState.root[indexData].id);
-                                console.log("nodeData", nodeData)
-                                nodeData?.remove();
-                                nullifyValue({
-                                    indexLevel: [indexData],
-                                    updatedDataView,
-                                })
+                        let startDeleting = false;
+                        Object.values(roots).map((value, index) => {
+                            if (value === lastContentIndex) {
+                                startDeleting = false;
                             }
-                        }
+                            if (startDeleting) {
+                                const nodeData = document.getElementById(value);
+                                nodeData?.remove();
+                                removeRoot({ contentId: value })
+                                removeContent({ id: value })
+                            }
+                            if (value === firstContentIndex) {
+                                startDeleting = true;
+                            }
+
+                        })
 
                         // check if the last one is being completed deleted
 
                         // connect the first and last part to make them one data
 
-                        let firstValue = getNestedArray({ editorState: updatedDataView.editorState.root, indexLevel: [selectedValues[0].indexLevel[0]] });
+                        // let firstValue = getNestedArray({ editorState: updatedDataView.editorState.root, indexLevel: [selectedValues[0].indexLevel[0]] });
 
-                        let lastValue = getNestedArray({ editorState: updatedDataView.editorState.root, indexLevel: [selectedValues[selectedValues.length - 1].indexLevel[0]] });
-
-
-                        // cleanUpState({ editorState: updatedDataView.editorState.root, indexLevel: [selectedValues[selectedValues.length - 1].indexLevel[0]] })
-
-                        console.log("updatedDataView", updatedDataView);
-
-                        if (lastValue && firstValue) {
-                            let data: EditorStateChildren;
-                            if (firstValue.content != null && !firstValue.children) {
-                                data = {
-                                    id: v4(),
-                                    type: "P",
-                                    className: "",
-                                    direction: "",
-                                    indent: 0,
-                                    content: firstValue.content
-                                }
-                                firstValue.children = [data];
-                                firstValue.content = undefined;
-                            } else if (firstValue.children) {
-                                cleanUpState({ editorState: updatedDataView.editorState.root, indexLevel: [selectedValues[0].indexLevel[0]] })
-                            }
-                            if (lastValue.content != null && !lastValue.children) {
-                                data = {
-                                    id: v4(),
-                                    type: "P",
-                                    className: "",
-                                    direction: "",
-                                    indent: 0,
-                                    content: lastValue.content
-                                }
-                                lastValue.children = [data];
-                                lastValue.content = undefined;
-                            } else if (lastValue.children) {
-                                cleanUpState({ editorState: updatedDataView.editorState.root, indexLevel: [selectedValues[selectedValues.length - 1].indexLevel[0]] })
-                            }
-                            firstValue.children = [...firstValue.children ?? [], ...lastValue.children ?? []]
-                            firstValue.content = undefined;
-                        } else {
-
-                        }
+                        // let lastValue = getNestedArray({ editorState: updatedDataView.editorState.root, indexLevel: [selectedValues[selectedValues.length - 1].indexLevel[0]] });
 
 
+                        // // cleanUpState({ editorState: updatedDataView.editorState.root, indexLevel: [selectedValues[selectedValues.length - 1].indexLevel[0]] })
 
-                        console.log("updatedDataView", updatedDataView)
+                        // console.log("updatedDataView", updatedDataView);
 
+                        // if (lastValue && firstValue) {
+                        //     let data: EditorStateChildren;
+                        //     if (firstValue.content != null && !firstValue.children) {
+                        //         data = {
+                        //             id: v4(),
+                        //             type: "P",
+                        //             className: "",
+                        //             direction: "",
+                        //             indent: 0,
+                        //             content: firstValue.content
+                        //         }
+                        //         firstValue.children = [data];
+                        //         firstValue.content = undefined;
+                        //     } else if (firstValue.children) {
+                        //         cleanUpState({ editorState: updatedDataView.editorState.root, indexLevel: [selectedValues[0].indexLevel[0]] })
+                        //     }
+                        //     if (lastValue.content != null && !lastValue.children) {
+                        //         data = {
+                        //             id: v4(),
+                        //             type: "P",
+                        //             className: "",
+                        //             direction: "",
+                        //             indent: 0,
+                        //             content: lastValue.content
+                        //         }
+                        //         lastValue.children = [data];
+                        //         lastValue.content = undefined;
+                        //     } else if (lastValue.children) {
+                        //         cleanUpState({ editorState: updatedDataView.editorState.root, indexLevel: [selectedValues[selectedValues.length - 1].indexLevel[0]] })
+                        //     }
+                        //     firstValue.children = [...firstValue.children ?? [], ...lastValue.children ?? []]
+                        //     firstValue.content = undefined;
+                        // } else {
+
+                        // }
+
+
+                    }
+                    console.log("finalNodeData", finalNodeData);
+                    if (finalNodeData) {
+                        finalNodeData.node.focus();
+                        updateCaretToMatch({ currentPosition: finalNodeData.startPos, id: finalNodeData.id, selection: selection! })
                     }
                 }
 
@@ -235,9 +208,9 @@ export const TextTest = () => {
                 else if (event.code === "Backspace") {
 
                     if (selectedValues.length === 0 && node.textContent.length === 1) {
-                        event.preventDefault()
-                        await removedValue({ indexLevel, node, updatedDataView });
-                        setEditorValue(updatedDataView)
+                        // event.preventDefault()
+                        // await removedValue({ indexLevel, node, updatedDataView });
+                        // setEditorValue(updatedDataView)
                     }
 
                 }
@@ -245,6 +218,9 @@ export const TextTest = () => {
                 else if (event.code === "Space") {
 
                 }
+
+                console.log("getContents", getContents())
+                console.log("getAllChildren", getAllChildren())
 
             }}
             onPaste={(event) => {
