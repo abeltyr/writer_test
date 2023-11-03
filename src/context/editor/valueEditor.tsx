@@ -4,51 +4,49 @@ import { Editor } from '@/interface/editor';
 import React, { useContext, useEffect, useState } from "react";
 import { v4 } from "uuid";
 import { childIntegration } from './childIntegration';
-import { getContent, updateChildren, updateContents, updateRoot } from '@/utils/editor';
+import { getContent, updateChildren, updateContents, updateRoot } from '@/utils/editor/data';
 
 const defaultEditorValue: Editor = {
     id: v4(),
     editorState: {
         children: {
-            "2": {
-                "3": {
+            "2": [
+                {
                     contentId: "3",
                     parentId: "2",
                 },
-                "4": {
+                {
                     contentId: "4",
                     parentId: "2",
                 },
-                "7": {
+                {
                     contentId: "7",
                     parentId: "2",
                 },
-                "8": {
+                {
                     contentId: "8",
                     parentId: "2",
                 }
+            ],
+            "4": [{
+                contentId: "5",
+                parentId: "4",
             },
-            "4": {
-                "5": {
-                    contentId: "5",
-                    parentId: "4",
-                },
-                "6": {
-                    contentId: "6",
-                    parentId: "4",
-                },
-            }
-            ,
-            "8": {
-                "9": {
+            {
+                contentId: "6",
+                parentId: "4",
+            },
+            ],
+            "8": [
+                {
                     contentId: "9",
                     parentId: "8",
                 },
-                "10": {
+                {
                     contentId: "10",
                     parentId: "8",
                 },
-            }
+            ]
         },
         content: {
             "0": {
@@ -171,11 +169,11 @@ const defaultEditorValue: Editor = {
                 parentId: "8",
             },
         },
-        root: {
-            "0": "0",
-            "1": "1",
-            "2": "2"
-        },
+        root: [
+            "0",
+            "1",
+            "2"
+        ],
         rule: {
             availableFeature: [],
             maxChildrenAmount: null
@@ -221,7 +219,7 @@ const EditorProvider: React.FC<Props> = ({ children }) => {
 
         const rootEditorElement = document.getElementById('editor');
         let count = 0
-        Object.entries(editorValue.editorState.root).map(([key, value]) => {
+        editorValue.editorState.root.map((value, index) => {
             const editableState = getContent({ id: value });
             if (editableState) {
                 const parentElement = childIntegration({

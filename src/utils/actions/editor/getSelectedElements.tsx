@@ -1,12 +1,6 @@
-export const getSelectedElements = (): {
-    id: string,
-    node: HTMLElement,
-    fullySelected: boolean,
-    selectedText: string,
-    wholeText: string,
-    startPos: number,
-    endPos: number
-}[] => {
+import { SelectorType } from '@/interface/editor';
+
+export const getSelectedElements = (): SelectorType[] => {
     const selection = window.getSelection();
     if (selection!.rangeCount > 0) {
         const range = selection!.getRangeAt(0);

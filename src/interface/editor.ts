@@ -19,16 +19,10 @@ export type EditorState = {
   rule: EditorStateRule;
 };
 
-export type EditorRootType = {
-  [id: string]: string;
-};
+export type EditorRootType = string[];
 
 export type EditorChildrenType = {
-  [parentId: string]: EditorChildrenValueType;
-};
-
-export type EditorChildrenValueType = {
-  [contentId: string]: ValueType;
+  [parentId: string]: ValueType[];
 };
 
 export type EditorContentType = {
@@ -108,4 +102,14 @@ export type AssetsConstrain = {
   maxWidth?: string | number;
   minHeight?: string | number;
   minWidth?: string | number;
+};
+
+export type SelectorType = {
+  id: string;
+  node: HTMLElement;
+  fullySelected: boolean;
+  selectedText: string;
+  wholeText: string;
+  startPos: number;
+  endPos: number;
 };

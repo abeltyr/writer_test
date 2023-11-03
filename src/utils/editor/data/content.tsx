@@ -36,13 +36,23 @@ export const getContents = () => {
 }
 
 
-export const getRootParentIndex = ({ contentValue }: { contentValue: EditorStateContentType }) => {
+export const getRootParentValue = ({ contentValue }: { contentValue: EditorStateContentType }) => {
     let id = "";
 
-    if (contentValue && contentValue.parentId) {
-        id = getRootParentIndex({ contentValue: contents[contentValue.parentId] })
+    if (contentValue.parentId) {
+        id = getRootParentValue({ contentValue: contents[contentValue.parentId] })
     } else {
         id = contentValue.id;
     }
     return id;
+}
+
+
+export const getChildrenSecondValue = ({ contentValue, id = "" }: { contentValue: EditorStateContentType, id: string }) => {
+    let newParentID = id;
+    if (contentValue.parentId) {
+        newParentID = getChildrenSecondValue({ contentValue: contents[contentValue.parentId], id: contentValue.id })
+    }
+
+    return newParentID;
 }

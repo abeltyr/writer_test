@@ -1,10 +1,9 @@
 import { childIntegration } from '@/context/editor/childIntegration';
-import { spanChild } from '@/context/editor/typography';
 import { useEditor } from '@/context/editor/valueEditor';
-import { Editor, EditorContentType } from '@/interface/editor';
+import { Editor, EditorStateContentType, SelectorType } from '@/interface/editor';
 import { check, cleanUpState, getSelectedElements, nullifyValue } from '@/utils/actions';
 import { removedValue } from '@/utils/actions/editor/removedValue';
-import { getAllChildren, getChildren, getContent, getContents, getRoot, getRootParentIndex, getRoots, removeChildrenContent, removeContent, removeRoot, updateContents, updateValueContent, upsetContent } from '@/utils/editor';
+import { addRoot, getAllChildren, getChildren, getChildrenIndex, getChildrenSecondValue, getContent, getContents, getRoot, getRootIndex, getRootLength, getRootParentValue, getRoots, insertRoot, removeChildrenContent, removeContent, removeRoot, updateContents, updateValueContent, upsetContent, upsetRoot } from '@/utils/editor/data';
 import { getCurrentlyEditedElement, getNestedArray, removeNestedArray, updateNestedArray, updateNestedArrayContent, } from '@/utils/editors';
 import { updateCaretToMatch } from '@/utils/editors/editorData/cursor';
 import React, { useEffect, } from 'react'
@@ -12,7 +11,7 @@ import { v4 } from 'uuid';
 
 export const TextTest = () => {
 
-    const { editorValue, setEditorValue, renderEditorDom } = useEditor();
+    const { renderEditorDom } = useEditor();
 
     useEffect(() => {
         renderEditorDom();
@@ -28,16 +27,17 @@ export const TextTest = () => {
     return (
         <div
             id="editor"
-            className={` py-2 px-4 outline-none cursor-text block whitespace-pre-wrap break-words select-text `}
+            className={`py-2 px-4 outline-none cursor-text block whitespace-pre-wrap break-words select-text `}
 
             suppressContentEditableWarning={true}
             contentEditable
-
-            onInput={async (event) => {
-
+            onDragStart={(event) => {
+                console.log("drag started")
+                event.preventDefault();
+            }}
+            onInput={(_) => {
                 let { selection, node } = getCurrentlyEditedElement()
-                if (node && selection) {
-                    let cartUpdate = true
+                if (node && node.firstChild && selection) {
                     if (node.firstChild.nodeType === 3) {
                         updateValueContent({
                             id: id,
@@ -49,18 +49,10 @@ export const TextTest = () => {
                         if (!parentContent.parentId) {
                             //TODO: May need a future check
                             check({ node })
-                            cartUpdate = false;
                         }
-
                     }
-
-                    // if (cartUpdate) updateCaretToMatch({ id, currentPosition, selection });
-                    // console.log("updatedDataView", updatedDataView);
-
+                    // add data match with the json
                 }
-
-
-
             }}
             onKeyDown={async (event: React.KeyboardEvent<HTMLDivElement>) => {
 
@@ -79,148 +71,96 @@ export const TextTest = () => {
                 // fetch all the selected texts
                 const selectedValues = getSelectedElements();
 
-                // if there is a selected text we need to update the variable accordingly 
-                if (selectedValues.length > 0) {
-                    event.preventDefault();
-
-                    const firstContent = JSON.parse(JSON.stringify(getContent({ id: selectedValues[0].id })))
-                    const lastContent = JSON.parse(JSON.stringify(getContent({ id: selectedValues[selectedValues.length - 1].id })))
-                    let firstContentIndex = "-1";
-                    let lastContentIndex = "-2";
-                    if (firstContent && lastContent) {
-                        firstContentIndex = getRootParentIndex({ contentValue: firstContent })
-                        lastContentIndex = getRootParentIndex({ contentValue: lastContent })
-                    }
-
-
-                    let finalNodeData: any;
-                    // loop throw the selected text and remove them and there parent if they have been selected as a whole, 
-                    // if they are partially selected they are modified a 
-                    selectedValues.map(async (value, index) => {
-                        if (value.fullySelected) {
-                            await removedValue({ node: value.node })
-                        } else {
-                            let updatedText = "";
-                            let updatedId = value.node.id;
-                            if (index === 0) {
-                                updatedText = value.wholeText.slice(0, value.startPos);
-                                value.node.textContent = updatedText
-                                updatedId = value.node.id;
-                                finalNodeData = value;
-                            }
-                            else if (index === selectedValues.length - 1) {
-                                updatedText = value.wholeText.slice(value.endPos, value.wholeText.length);
-                                value.node.textContent = value.wholeText.slice(value.endPos, value.wholeText.length)
-                                if (!finalNodeData) finalNodeData = value;
-                            }
-                            await updateValueContent({ id: updatedId, value: updatedText })
-                        }
-                    });
-
-
-                    if (firstContentIndex != lastContentIndex) {
-                        const roots = getRoots();
-
-                        let startDeleting = false;
-                        Object.values(roots).map((value, index) => {
-                            if (value === lastContentIndex) {
-                                startDeleting = false;
-                            }
-                            if (startDeleting) {
-                                const nodeData = document.getElementById(value);
-                                nodeData?.remove();
-                                removeRoot({ contentId: value })
-                                removeContent({ id: value })
-                            }
-                            if (value === firstContentIndex) {
-                                startDeleting = true;
-                            }
-
-                        })
-
-                        // check if the last one is being completed deleted
-
-                        // connect the first and last part to make them one data
-
-                        // let firstValue = getNestedArray({ editorState: updatedDataView.editorState.root, indexLevel: [selectedValues[0].indexLevel[0]] });
-
-                        // let lastValue = getNestedArray({ editorState: updatedDataView.editorState.root, indexLevel: [selectedValues[selectedValues.length - 1].indexLevel[0]] });
-
-
-                        // // cleanUpState({ editorState: updatedDataView.editorState.root, indexLevel: [selectedValues[selectedValues.length - 1].indexLevel[0]] })
-
-                        // console.log("updatedDataView", updatedDataView);
-
-                        // if (lastValue && firstValue) {
-                        //     let data: EditorStateChildren;
-                        //     if (firstValue.content != null && !firstValue.children) {
-                        //         data = {
-                        //             id: v4(),
-                        //             type: "P",
-                        //             className: "",
-                        //             direction: "",
-                        //             indent: 0,
-                        //             content: firstValue.content
-                        //         }
-                        //         firstValue.children = [data];
-                        //         firstValue.content = undefined;
-                        //     } else if (firstValue.children) {
-                        //         cleanUpState({ editorState: updatedDataView.editorState.root, indexLevel: [selectedValues[0].indexLevel[0]] })
-                        //     }
-                        //     if (lastValue.content != null && !lastValue.children) {
-                        //         data = {
-                        //             id: v4(),
-                        //             type: "P",
-                        //             className: "",
-                        //             direction: "",
-                        //             indent: 0,
-                        //             content: lastValue.content
-                        //         }
-                        //         lastValue.children = [data];
-                        //         lastValue.content = undefined;
-                        //     } else if (lastValue.children) {
-                        //         cleanUpState({ editorState: updatedDataView.editorState.root, indexLevel: [selectedValues[selectedValues.length - 1].indexLevel[0]] })
-                        //     }
-                        //     firstValue.children = [...firstValue.children ?? [], ...lastValue.children ?? []]
-                        //     firstValue.content = undefined;
-                        // } else {
-
-                        // }
-
-
-                    }
-                    console.log("finalNodeData", finalNodeData);
-                    if (finalNodeData) {
-                        finalNodeData.node.focus();
-                        updateCaretToMatch({ currentPosition: finalNodeData.startPos, id: finalNodeData.id, selection: selection! })
-                    }
-                }
-
-
-
+                // await selectBasedUpdate({ event, selectedValues, selection: selection! })
 
                 if (event.code === "Enter") {
                     event.preventDefault();
+                    const contentId = v4();
+
+                    // first check if it is a content has a child or a value
+
+                    // if it has a value check where at the caret is 
+
+                    const currentContent = getContent({ id });
+                    const rootId = getRootParentValue({ contentValue: currentContent })
+                    const rootContent = getContent({ id: rootId });
+
+                    let children: string | undefined;
+                    let contentValue: string | undefined;
+                    let newContentValue: string | undefined;
+
+                    if (rootContent.content) {
+                        contentValue = rootContent.content.slice(0, currentPosition);
+                        newContentValue = rootContent.content.slice(currentPosition, rootContent.content.length + 1);
+                        node.textContent = contentValue;
+                        updateValueContent({ id: id, value: contentValue })
+                    }
+                    else if (rootContent.children) {
+                        console.log();
+
+                        const childCutId = getChildrenSecondValue({ contentValue: currentContent, id: "" });
+
+                        const childData = getChildrenIndex({ contentId: childCutId, parentId: rootContent.children })
+
+                        console.log("childCutId", childCutId)
+                        console.log("childData", childData)
+                    }
+
+
+
+                    // if the value is in the middle move the current value to the new one 
+                    const contentData: EditorStateContentType = {
+                        id: contentId,
+                        type: "P",
+                        className: "",
+                        direction: "ltr",
+                        indent: 0,
+                        content: newContentValue,
+                        format: null,
+                    }
+                    upsetContent({ id: contentId, value: contentData })
+
+                    const rootEditorElement = document.getElementById('editor');
+
+                    if (rootEditorElement) {
+                        const childElement = childIntegration({
+                            editorStateData: contentData,
+                        })
+                        const currentContent = getContent({ id: id });
+                        const rootId = getRootParentValue({ contentValue: currentContent })
+                        const rootIndex = getRootIndex({ contentId: rootId })
+                        const rootLength = getRootLength()
+
+                        if (rootIndex < rootLength - 1) {
+                            const beforeElement = document.getElementById(getRoot({ index: rootIndex + 1 }));
+                            insertRoot({ index: rootIndex + 1, contentId })
+                            if (beforeElement) {
+                                rootEditorElement.insertBefore(childElement, beforeElement)
+                            }
+                        } else {
+
+                            // TODO: if the below text is empty just move the to the next rather than  
+                            addRoot({ contentId })
+                            rootEditorElement.appendChild(childElement)
+                            console.log("childElement", childElement)
+                        }
+                        updateCaretToMatch({ id: contentId, currentPosition: 0, selection: selection! })
+                    }
                 }
                 else if (event.code === "Tab") {
                     event.preventDefault();
                 }
-                else if (event.code === "Backspace") {
-
+                else if (event.code === "Backspace" || event.code === "Delete") {
                     if (selectedValues.length === 0 && node.textContent.length === 1) {
-                        // event.preventDefault()
-                        // await removedValue({ indexLevel, node, updatedDataView });
-                        // setEditorValue(updatedDataView)
+                        event.preventDefault()
+                        removedValue({ node });
                     }
 
                 }
 
-                else if (event.code === "Space") {
-
-                }
-
-                console.log("getContents", getContents())
-                console.log("getAllChildren", getAllChildren())
+                // console.log("getContents", getContents())
+                // console.log("getAllChildren", getAllChildren())
+                // console.log("getRoots", getRoots())
 
             }}
             onPaste={(event) => {
@@ -234,3 +174,133 @@ export const TextTest = () => {
 
 
 
+
+const selectBasedUpdate = (
+    {
+        selectedValues,
+        selection,
+        event
+    }: {
+        selectedValues: SelectorType[],
+        selection: Selection,
+        event: React.KeyboardEvent<HTMLDivElement>
+    }) => {
+
+    if (selectedValues.length > 0 && (event.key.length === 1 || event.code === "Backspace" || event.code === "Delete" || event.code === "Enter")) {
+        event.preventDefault()
+
+        // fetch the first and last selected contents
+        const firstSelectedValue = selectedValues[0];
+        const lastSelectedValue = selectedValues[selectedValues.length - 1];
+        const firstContent = JSON.parse(JSON.stringify(getContent({ id: firstSelectedValue.id })))
+        const lastContent = JSON.parse(JSON.stringify(getContent({ id: lastSelectedValue.id })))
+
+        let firstRootValue = "-1";
+        let lastRootValue = "";
+
+        if (firstContent && lastContent) {
+            firstRootValue = getRootParentValue({ contentValue: firstContent })
+            lastRootValue = getRootParentValue({ contentValue: lastContent })
+        }
+
+
+
+
+        // remove the 
+        if (firstRootValue != lastRootValue) {
+            const roots = getRoots();
+            let startDeleting = false;
+            roots.map((value, index) => {
+                if (value === lastRootValue) {
+                    startDeleting = false;
+                }
+                if (startDeleting) {
+                    const nodeData = document.getElementById(value);
+                    nodeData?.remove();
+                    removeRoot({ index: index })
+                    removeContent({ id: value })
+                }
+                if (value === firstRootValue) {
+                    startDeleting = true;
+                }
+            })
+        }
+
+
+        let firstSelected = false;
+
+        let finalNodeData: SelectorType | undefined;
+
+        // loop throw the selected text and remove them and there parent if they have been selected as a whole, 
+        // if they are partially selected they are modified accordingly
+        selectedValues.map(async (value, index) => {
+            if (value.fullySelected) {
+                await removedValue({ node: value.node })
+            } else {
+                let updatedText = "";
+                let updatedId = value.node.id;
+                if (index === 0) {
+                    updatedText = value.wholeText.slice(0, value.startPos);
+                    value.node.textContent = updatedText
+                    updatedId = value.node.id;
+                    finalNodeData = value;
+                    firstSelected = true;
+                }
+                else if (index === selectedValues.length - 1) {
+                    updatedText = value.wholeText.slice(value.endPos, value.wholeText.length);
+                    value.node.textContent = value.wholeText.slice(value.endPos, value.wholeText.length)
+                    if (!finalNodeData || event.code === "Delete") {
+                        finalNodeData = value;
+                        firstSelected = false;
+                    }
+                }
+                await updateValueContent({ id: updatedId, value: updatedText })
+            }
+        });
+
+
+        if (finalNodeData) {
+            let currentPosition = finalNodeData.startPos;
+
+            if (!firstSelected) {
+                currentPosition = 0
+            }
+
+
+            if (event.key) {
+                console.log("inputKey", event.key, event.key.length)
+                if (event.key.length === 1) {
+                    if (firstSelected) {
+                        finalNodeData.node.textContent = finalNodeData.node.textContent + event.key;
+                        currentPosition = currentPosition + 1;
+                    } else {
+                        finalNodeData.node.textContent = event.key + finalNodeData.node.textContent;
+                        console.log("here");
+                        currentPosition = currentPosition + 1;
+                    }
+                    updateValueContent({ id: finalNodeData.id, value: finalNodeData.node.textContent })
+                }
+            }
+            finalNodeData.node.focus();
+            updateCaretToMatch({ currentPosition: currentPosition, id: finalNodeData.id, selection: selection! })
+        }
+
+        if (!lastSelectedValue.fullySelected && !firstSelectedValue.fullySelected) {
+            console.log("move to the back")
+            const firstChildren = getChildren({ index: firstRootValue })
+            const lastChildren = getChildren({ index: lastRootValue })
+            const newChildren = { ...firstChildren, ...lastChildren }
+
+
+        }
+
+        if (!lastSelectedValue.fullySelected && firstSelectedValue.fullySelected) {
+            console.log("move to the front")
+        }
+
+        if (lastSelectedValue.fullySelected && firstSelectedValue.fullySelected) {
+            console.log("move to the front as new")
+        }
+    }
+
+}

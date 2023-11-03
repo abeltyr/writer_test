@@ -1,6 +1,6 @@
 import { spanChild } from '@/context/editor/typography';
 import { EditorStateContentType } from '@/interface/editor';
-import { addChildren, updateValueContent, upsetContent } from '@/utils/editor';
+import { addChildren, updateValueContent, upsetContent } from '@/utils/editor/data';
 import { updateCaretToMatch } from '@/utils/editors/editorData/cursor';
 import { v4 } from 'uuid';
 

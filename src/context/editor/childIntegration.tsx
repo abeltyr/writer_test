@@ -1,7 +1,7 @@
 
 import { Editor, EditorStateContentType } from '@/interface/editor';
 import { h1Element, linkElement, pElement, spanChild } from './typography';
-import { getChildren, getContent } from '@/utils/editor';
+import { getChildren, getContent } from '@/utils/editor/data';
 
 export const childIntegration = (
     {
