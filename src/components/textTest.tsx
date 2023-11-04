@@ -3,7 +3,7 @@ import { useEditor } from '@/context/editor/valueEditor';
 import { Editor, EditorStateContentType, SelectorType } from '@/interface/editor';
 import { check, cleanUpState, getSelectedElements, nullifyValue } from '@/utils/actions';
 import { removedValue } from '@/utils/actions/editor/removedValue';
-import { addRoot, getAllChildren, getChildren, getChildrenIndex, getChildrenSecondValue, getContent, getContents, getRoot, getRootIndex, getRootLength, getRootParentValue, getRoots, insertRoot, removeChildrenContent, removeContent, removeRoot, updateContents, updateValueContent, upsetContent, upsetRoot } from '@/utils/editor/data';
+import { addRoot, getAllChildren, getChildren, getChildrenIndex, getContent, getContents, getRoot, getRootIndex, getRootLength, getRootParentValue, getRoots, insertRoot, removeChildrenContent, removeContent, removeRoot, rootChildCutter, updateContents, updateValueContent, upsetChildren, upsetContent, upsetRoot } from '@/utils/editor/data';
 import { getCurrentlyEditedElement, getNestedArray, removeNestedArray, updateNestedArray, updateNestedArrayContent, } from '@/utils/editors';
 import { updateCaretToMatch } from '@/utils/editors/editorData/cursor';
 import React, { useEffect, } from 'react'
@@ -75,7 +75,7 @@ export const TextTest = () => {
 
                 if (event.code === "Enter") {
                     event.preventDefault();
-                    const contentId = v4();
+                    let contentId = v4();
 
                     // first check if it is a content has a child or a value
 
@@ -85,7 +85,6 @@ export const TextTest = () => {
                     const rootId = getRootParentValue({ contentValue: currentContent })
                     const rootContent = getContent({ id: rootId });
 
-                    let children: string | undefined;
                     let contentValue: string | undefined;
                     let newContentValue: string | undefined;
 
@@ -94,43 +93,50 @@ export const TextTest = () => {
                         newContentValue = rootContent.content.slice(currentPosition, rootContent.content.length + 1);
                         node.textContent = contentValue;
                         updateValueContent({ id: id, value: contentValue })
+                        const contentData: EditorStateContentType = {
+                            id: contentId,
+                            type: "P",
+                            className: "",
+                            direction: "ltr",
+                            indent: 0,
+                            content: newContentValue,
+                            format: null,
+                        }
+                        upsetContent({ id: contentId, value: contentData })
                     }
                     else if (rootContent.children) {
-                        console.log();
-
-                        const childCutId = getChildrenSecondValue({ contentValue: currentContent, id: "" });
-
-                        const childData = getChildrenIndex({ contentId: childCutId, parentId: rootContent.children })
-
-                        console.log("childCutId", childCutId)
-                        console.log("childData", childData)
+                        const data = await rootChildCutter({ contentId: id, parentId: rootContent.children, currentPosition });
+                        contentId = data.parentId;
+                        const contentData: EditorStateContentType = {
+                            id: contentId,
+                            type: "P",
+                            className: "",
+                            direction: "ltr",
+                            indent: 0,
+                            children: contentId,
+                            format: null,
+                        }
+                        upsetChildren({ parentId: data.parentId, value: data.newChildren });
+                        upsetContent({ id: contentData.id, value: contentData })
                     }
 
 
 
                     // if the value is in the middle move the current value to the new one 
-                    const contentData: EditorStateContentType = {
-                        id: contentId,
-                        type: "P",
-                        className: "",
-                        direction: "ltr",
-                        indent: 0,
-                        content: newContentValue,
-                        format: null,
-                    }
-                    upsetContent({ id: contentId, value: contentData })
+
 
                     const rootEditorElement = document.getElementById('editor');
 
                     if (rootEditorElement) {
+                        const content = getContent({ id: contentId })
                         const childElement = childIntegration({
-                            editorStateData: contentData,
+                            editorStateData: content,
                         })
-                        const currentContent = getContent({ id: id });
-                        const rootId = getRootParentValue({ contentValue: currentContent })
+                        console.log("content", childElement);
                         const rootIndex = getRootIndex({ contentId: rootId })
                         const rootLength = getRootLength()
 
+                        console.log("rootIndex", rootIndex);
                         if (rootIndex < rootLength - 1) {
                             const beforeElement = document.getElementById(getRoot({ index: rootIndex + 1 }));
                             insertRoot({ index: rootIndex + 1, contentId })
@@ -138,12 +144,18 @@ export const TextTest = () => {
                                 rootEditorElement.insertBefore(childElement, beforeElement)
                             }
                         } else {
-
                             // TODO: if the below text is empty just move the to the next rather than  
                             addRoot({ contentId })
                             rootEditorElement.appendChild(childElement)
                             console.log("childElement", childElement)
                         }
+                        const updateChildElement = childIntegration({
+                            editorStateData: rootContent,
+                        })
+                        const currentChildElement = document.getElementById(rootId)
+                        if (currentChildElement)
+                            rootEditorElement.replaceChild(updateChildElement, currentChildElement)
+
                         updateCaretToMatch({ id: contentId, currentPosition: 0, selection: selection! })
                     }
                 }
@@ -158,9 +170,9 @@ export const TextTest = () => {
 
                 }
 
-                // console.log("getContents", getContents())
-                // console.log("getAllChildren", getAllChildren())
-                // console.log("getRoots", getRoots())
+                console.log("getContents", getContents())
+                console.log("getAllChildren", getAllChildren())
+                console.log("getRoots", getRoots())
 
             }}
             onPaste={(event) => {
@@ -287,8 +299,8 @@ const selectBasedUpdate = (
 
         if (!lastSelectedValue.fullySelected && !firstSelectedValue.fullySelected) {
             console.log("move to the back")
-            const firstChildren = getChildren({ index: firstRootValue })
-            const lastChildren = getChildren({ index: lastRootValue })
+            const firstChildren = getChildren({ parentId: firstRootValue })
+            const lastChildren = getChildren({ parentId: lastRootValue })
             const newChildren = { ...firstChildren, ...lastChildren }
 
 

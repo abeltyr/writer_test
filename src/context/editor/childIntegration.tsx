@@ -28,7 +28,7 @@ export const childIntegration = (
     }
 
     if (editorStateData.children) {
-        const editableStatChildren = getChildren({ index: editorStateData.children });
+        const editableStatChildren = getChildren({ parentId: editorStateData.children });
         Object.values(editableStatChildren).map((value, index) => {
             const editableState = getContent({ id: value.contentId })
             childElement = childIntegration({

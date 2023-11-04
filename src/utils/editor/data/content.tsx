@@ -22,6 +22,12 @@ export const updateValueContent = async ({ id, value }: { id: string, value: str
     return update
 }
 
+export const updateParentContent = async ({ id, parentId }: { id: string, parentId: string }) => {
+    if (contents[id]) {
+        contents[id].parentId = parentId;
+    }
+}
+
 export const removeContent = ({ id }: { id: string, }) => {
     delete contents[id];
 }
@@ -48,10 +54,11 @@ export const getRootParentValue = ({ contentValue }: { contentValue: EditorState
 }
 
 
-export const getChildrenSecondValue = ({ contentValue, id = "" }: { contentValue: EditorStateContentType, id: string }) => {
-    let newParentID = id;
-    if (contentValue.parentId) {
-        newParentID = getChildrenSecondValue({ contentValue: contents[contentValue.parentId], id: contentValue.id })
+export const getSecondParentValue = ({ contentId, id = "", finalId = "" }: { contentId: string, id: string, finalId: string }) => {
+    const contentValue = contents[contentId]
+    let newParentID = contentValue.id;
+    if (contentValue && contentValue.parentId && finalId != contentValue.parentId) {
+        newParentID = getSecondParentValue({ contentId: contentValue.parentId, id: contentValue.id, finalId })
     }
 
     return newParentID;

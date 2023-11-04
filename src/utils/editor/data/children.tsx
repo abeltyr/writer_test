@@ -1,12 +1,13 @@
-import { EditorChildrenType, ValueType } from '@/interface/editor';
-import { getContent, removeContent } from './content';
+import { EditorChildrenType, EditorStateContentType, ValueType } from '@/interface/editor';
+import { getSecondParentValue, getContent, removeContent, updateValueContent, upsetContent, updateParentContent } from './content';
+import { v4 } from 'uuid';
 
 
 let children: EditorChildrenType = {}
 
 
-export const getChildren = ({ index }: { index: string, }) => {
-    return children[index];
+export const getChildren = ({ parentId }: { parentId: string, }) => {
+    return children[parentId];
 }
 
 export const getAllChildren = () => {
@@ -14,6 +15,9 @@ export const getAllChildren = () => {
 }
 
 export const getChildrenIndex = ({ parentId, contentId }: { parentId: string, contentId: string }) => {
+    console.log("parentId", parentId)
+    console.log("(children[parentId]", children[parentId])
+    console.log("contentId", contentId)
     if (children[parentId]) {
         return children[parentId].findIndex(value => value.contentId === contentId);
     }
@@ -26,8 +30,8 @@ export const updateChildren = (value: EditorChildrenType) => {
     children = value;
 }
 
-export const upsetChildren = ({ index, value }: { index: string, value: ValueType[] }) => {
-    children[index] = value;
+export const upsetChildren = ({ parentId, value }: { parentId: string, value: ValueType[] }) => {
+    children[parentId] = value;
 }
 
 // TODO: check if this will be used
@@ -137,3 +141,79 @@ export const removeChildrenContent = async ({ parentId, contentId }: { parentId:
     }
 }
 
+
+export const rootChildCutter = async ({ parentId, contentId, currentPosition }: { parentId: string, contentId: string, currentPosition: number }) => {
+
+    let newChildren: ValueType[] = [];
+
+    const childCutId = await getSecondParentValue({ contentId, id: contentId, finalId: parentId });
+    const childIndex = await getChildrenIndex({ contentId: childCutId, parentId: parentId })
+    const childrenData = await getChildren({ parentId: parentId })
+    const newParentId = v4();
+    let currentContentId = contentId
+
+    if (contentId != childCutId)
+        currentContentId = childrenData[childIndex].contentId
+
+    const currentContent = getContent({ id: currentContentId })
+
+    await childrenData.slice(childIndex + 1, childrenData.length).forEach((value, index) => {
+        newChildren = [...newChildren, {
+            contentId: value.contentId,
+            parentId: newParentId
+        }]
+        updateParentContent({ id: value.contentId, parentId: newParentId })
+        children[parentId].splice(childIndex + 1, 1)
+    })
+
+    let contentValue: string | undefined;
+    let newContentValue: string | undefined;
+
+    if (currentContent.content) {
+        contentValue = currentContent.content.slice(0, currentPosition);
+        newContentValue = currentContent.content.slice(currentPosition, currentContent.content.length + 1);
+        // node.textContent = contentValue;
+        updateValueContent({ id: currentContent.id, value: contentValue })
+        updateParentContent({ id: currentContent.id, parentId: newParentId })
+        // updateTextValue({ id: currentContent.id, value: contentValue })
+        const contentData: EditorStateContentType = {
+            id: v4(),
+            type: "P",
+            className: "",
+            direction: "ltr",
+            indent: 0,
+            content: newContentValue,
+            format: null,
+            parentId: newParentId
+        }
+        upsetContent({ id: contentData.id, value: contentData })
+        newChildren = [
+            {
+                contentId: contentData.id,
+                parentId: newParentId
+
+            }, ...newChildren
+        ]
+    }
+    else if (currentContent.children) {
+        const childCollection = await rootChildCutter({ contentId, parentId: currentContent.children, currentPosition })
+        children[childCollection.parentId] = childCollection.newChildren
+        const contentData: EditorStateContentType = {
+            ...currentContent,
+            id: childCollection.parentId,
+            children: childCollection.parentId,
+            content: undefined,
+            parentId: newParentId
+        }
+        upsetContent({ id: contentData.id, value: contentData })
+        newChildren = [
+            {
+                contentId: contentData.id,
+                parentId: newParentId
+            },
+            ...newChildren
+        ]
+    }
+
+    return { newChildren, parentId: newParentId }
+}
