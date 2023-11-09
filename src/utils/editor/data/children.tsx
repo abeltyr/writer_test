@@ -1,6 +1,7 @@
 import { EditorChildrenType, EditorStateContentType, ValueType } from '@/interface/editor';
 import { getSecondParentValue, getContent, removeContent, updateValueContent, upsetContent, updateParentContent } from './content';
 import { v4 } from 'uuid';
+import { updateTextValue } from '../node';
 
 
 let children: EditorChildrenType = {}
@@ -15,9 +16,6 @@ export const getAllChildren = () => {
 }
 
 export const getChildrenIndex = ({ parentId, contentId }: { parentId: string, contentId: string }) => {
-    console.log("parentId", parentId)
-    console.log("(children[parentId]", children[parentId])
-    console.log("contentId", contentId)
     if (children[parentId]) {
         return children[parentId].findIndex(value => value.contentId === contentId);
     }
@@ -145,55 +143,71 @@ export const removeChildrenContent = async ({ parentId, contentId }: { parentId:
 export const rootChildCutter = async ({ parentId, contentId, currentPosition }: { parentId: string, contentId: string, currentPosition: number }) => {
 
     let newChildren: ValueType[] = [];
-
-    const childCutId = await getSecondParentValue({ contentId, id: contentId, finalId: parentId });
-    const childIndex = await getChildrenIndex({ contentId: childCutId, parentId: parentId })
-    const childrenData = await getChildren({ parentId: parentId })
     const newParentId = v4();
-    let currentContentId = contentId
-
-    if (contentId != childCutId)
-        currentContentId = childrenData[childIndex].contentId
-
-    const currentContent = getContent({ id: currentContentId })
-
-    await childrenData.slice(childIndex + 1, childrenData.length).forEach((value, index) => {
-        newChildren = [...newChildren, {
-            contentId: value.contentId,
-            parentId: newParentId
-        }]
-        updateParentContent({ id: value.contentId, parentId: newParentId })
-        children[parentId].splice(childIndex + 1, 1)
-    })
-
     let contentValue: string | undefined;
-    let newContentValue: string | undefined;
+
+    // first let fetch the first child under the root and the parent of the current content 
+    const secondChildrenId = await getSecondParentValue({ contentId, id: contentId, finalId: parentId });
+
+    let currentContentId = contentId
+    let childrenData: ValueType[] = await getChildren({ parentId: parentId });
+    const childIndex = await getChildrenIndex({ contentId: secondChildrenId, parentId: parentId })
+
+    console.log(contentId, secondChildrenId);
+
+    /**
+     *  we check if the secondChildrenId is the same as the content id 
+     *  if it is it mean the current selected text is the second child of the root and doesn't have a children but rather a content
+     *  so no more action is needed to fetch the content
+     */
+    if (childIndex >= 0) {
+        /**
+         * but if it is not it mean second child is a children containing content, 
+         * using this secondChildId and contentId we fetch the index of the content from children
+         * update the current children and move to newChildren created
+         */
+        currentContentId = childrenData[childIndex].contentId
+        await childrenData.slice(childIndex + 1, childrenData.length).forEach((value, index) => {
+            newChildren = [...newChildren, {
+                contentId: value.contentId,
+                parentId: newParentId
+            }]
+            updateParentContent({ id: value.contentId, parentId: newParentId })
+            children[parentId].splice(childIndex + 1, 1)
+        })
+    }
+
+    // then let fetch the content to be manipulated
+    const currentContent = getContent({ id: currentContentId })
 
     if (currentContent.content) {
         contentValue = currentContent.content.slice(0, currentPosition);
-        newContentValue = currentContent.content.slice(currentPosition, currentContent.content.length + 1);
-        // node.textContent = contentValue;
         updateValueContent({ id: currentContent.id, value: contentValue })
         updateParentContent({ id: currentContent.id, parentId: newParentId })
-        // updateTextValue({ id: currentContent.id, value: contentValue })
-        const contentData: EditorStateContentType = {
-            id: v4(),
-            type: "P",
-            className: "",
-            direction: "ltr",
-            indent: 0,
-            content: newContentValue,
-            format: null,
-            parentId: newParentId
-        }
-        upsetContent({ id: contentData.id, value: contentData })
-        newChildren = [
-            {
-                contentId: contentData.id,
-                parentId: newParentId
 
-            }, ...newChildren
-        ]
+        const newContentValue = currentContent.content.slice(currentPosition, currentContent.content.length + 1);
+        if (newContentValue.length > 1) {
+            updateTextValue({ id: currentContent.id, value: contentValue })
+            const contentData: EditorStateContentType = {
+                id: v4(),
+                type: "P",
+                className: "",
+                direction: "ltr",
+                indent: 0,
+                content: newContentValue,
+                format: null,
+                parentId: newParentId
+            }
+            upsetContent({ id: contentData.id, value: contentData })
+            newChildren = [
+                {
+                    contentId: contentData.id,
+                    parentId: newParentId
+
+                }, ...newChildren
+            ]
+        }
+
     }
     else if (currentContent.children) {
         const childCollection = await rootChildCutter({ contentId, parentId: currentContent.children, currentPosition })

@@ -7,7 +7,6 @@ export const updateCaretToMatch = ({ id, currentPosition, selection }: { id: str
 
         if (contentEditableElement) {
             let node = contentEditableElement;
-            console.log(contentEditableElement.firstChild, contentEditableElement.firstChild?.nodeType)
 
             if (contentEditableElement.firstChild?.nodeType === 1) {
                 const firstChild = contentEditableElement.children[0];

@@ -35,10 +35,10 @@ export const check = async (
                     updateCaretToMatch({ id: id, currentPosition: initialData?.length, selection: selection! });
                 }
                 if (id.length > 0) {
-                    updateValueContent({
-                        id: id!,
-                        value: node.childNodes[i].textContent ?? "",
-                    })
+                    // updateValueContent({
+                    //     id: id!,
+                    //     value: node.childNodes[i].textContent ?? "",
+                    // })
                 }
             } else {
                 const id = v4();
@@ -64,15 +64,15 @@ export const check = async (
                 const selection = window.getSelection();
                 await updateCaretToMatch({ id: childElement.id, currentPosition: initialData?.length, selection: selection! });
 
-                addChildren({
-                    parentId: parentId,
-                    childId: id,
-                    value: {
-                        contentId: id,
-                        parentId: parentId,
-                    },
-                })
-                upsetContent({ id: id, value: data });
+                // addChildren({
+                //     parentId: parentId,
+                //     childId: id,
+                //     value: {
+                //         contentId: id,
+                //         parentId: parentId,
+                //     },
+                // })
+                // upsetContent({ id: id, value: data });
             }
         }
     }

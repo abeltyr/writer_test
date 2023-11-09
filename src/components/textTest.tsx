@@ -25,161 +25,107 @@ export const TextTest = () => {
 
 
     return (
-        <div
-            id="editor"
-            className={`py-2 px-4 outline-none cursor-text block whitespace-pre-wrap break-words select-text `}
+        <>
 
-            suppressContentEditableWarning={true}
-            contentEditable
-            onDragStart={(event) => {
-                console.log("drag started")
-                event.preventDefault();
-            }}
-            onInput={(_) => {
-                let { selection, node } = getCurrentlyEditedElement()
-                if (node && node.firstChild && selection) {
-                    if (node.firstChild.nodeType === 3) {
-                        updateValueContent({
-                            id: id,
-                            value: node.textContent
-                        });
-                    }
-                    else {
-                        const parentContent = getContent({ id: node.id })
-                        if (!parentContent.parentId) {
-                            //TODO: May need a future check
-                            check({ node })
-                        }
-                    }
-                    // add data match with the json
-                }
-            }}
-            onKeyDown={async (event: React.KeyboardEvent<HTMLDivElement>) => {
+            <div contentEditable={true} className='select-none'>
+                <div>
+                    <span>das dasnmn </span>
+                </div>
+                <div>
+                    <span>ldasmas ldasmas ldasmas ldasmas ldasmas ldasmas</span>
+                </div>
+            </div>
+            <div contentEditable={true} className='select-none'>
+            </div>
+            <div
+                id="editor"
+                className={` py-2 px-4 outline-none cursor-text block whitespace-pre-wrap break-words select-text border-2 rounded-xl`}
 
-                //fetch the node and section
-                const { selection, node } = getCurrentlyEditedElement()
-
-                // get the id of the current editable htmlElement
-                id = node.id;
-
-                // get the caretPosition of the current editable htmlElement
-                currentPosition = selection!.focusOffset;
-
-                // get the imputed text on the current editable htmlElement
-                inputKey = event.key;
-
-                // fetch all the selected texts
-                const selectedValues = getSelectedElements();
-
-                // await selectBasedUpdate({ event, selectedValues, selection: selection! })
-
-                if (event.code === "Enter") {
+                suppressContentEditableWarning={true}
+                contentEditable
+                onDragStart={(event) => {
+                    console.log("drag started")
                     event.preventDefault();
-                    let contentId = v4();
+                }}
+                onInput={(_) => {
+                    let { selection, node } = getCurrentlyEditedElement()
 
-                    // first check if it is a content has a child or a value
-
-                    // if it has a value check where at the caret is 
-
-                    const currentContent = getContent({ id });
-                    const rootId = getRootParentValue({ contentValue: currentContent })
-                    const rootContent = getContent({ id: rootId });
-
-                    let contentValue: string | undefined;
-                    let newContentValue: string | undefined;
-
-                    if (rootContent.content) {
-                        contentValue = rootContent.content.slice(0, currentPosition);
-                        newContentValue = rootContent.content.slice(currentPosition, rootContent.content.length + 1);
-                        node.textContent = contentValue;
-                        updateValueContent({ id: id, value: contentValue })
-                        const contentData: EditorStateContentType = {
-                            id: contentId,
-                            type: "P",
-                            className: "",
-                            direction: "ltr",
-                            indent: 0,
-                            content: newContentValue,
-                            format: null,
+                    console.log("onInput node", node)
+                    if (node && node.firstChild && selection) {
+                        if (node.firstChild.nodeType === 3) {
+                            updateValueContent({
+                                id: id,
+                                value: node.textContent
+                            });
                         }
-                        upsetContent({ id: contentId, value: contentData })
-                    }
-                    else if (rootContent.children) {
-                        const data = await rootChildCutter({ contentId: id, parentId: rootContent.children, currentPosition });
-                        contentId = data.parentId;
-                        const contentData: EditorStateContentType = {
-                            id: contentId,
-                            type: "P",
-                            className: "",
-                            direction: "ltr",
-                            indent: 0,
-                            children: contentId,
-                            format: null,
-                        }
-                        upsetChildren({ parentId: data.parentId, value: data.newChildren });
-                        upsetContent({ id: contentData.id, value: contentData })
-                    }
-
-
-
-                    // if the value is in the middle move the current value to the new one 
-
-
-                    const rootEditorElement = document.getElementById('editor');
-
-                    if (rootEditorElement) {
-                        const content = getContent({ id: contentId })
-                        const childElement = childIntegration({
-                            editorStateData: content,
-                        })
-                        console.log("content", childElement);
-                        const rootIndex = getRootIndex({ contentId: rootId })
-                        const rootLength = getRootLength()
-
-                        console.log("rootIndex", rootIndex);
-                        if (rootIndex < rootLength - 1) {
-                            const beforeElement = document.getElementById(getRoot({ index: rootIndex + 1 }));
-                            insertRoot({ index: rootIndex + 1, contentId })
-                            if (beforeElement) {
-                                rootEditorElement.insertBefore(childElement, beforeElement)
+                        else {
+                            const parentContent = getContent({ id: node.id })
+                            if (!parentContent.parentId) {
+                                ////TODO: May need a future check
+                                check({ node })
                             }
-                        } else {
-                            // TODO: if the below text is empty just move the to the next rather than  
-                            addRoot({ contentId })
-                            rootEditorElement.appendChild(childElement)
-                            console.log("childElement", childElement)
                         }
-                        const updateChildElement = childIntegration({
-                            editorStateData: rootContent,
-                        })
-                        const currentChildElement = document.getElementById(rootId)
-                        if (currentChildElement)
-                            rootEditorElement.replaceChild(updateChildElement, currentChildElement)
-
-                        updateCaretToMatch({ id: contentId, currentPosition: 0, selection: selection! })
+                        // add data match with the json
                     }
-                }
-                else if (event.code === "Tab") {
+
+                }}
+                onKeyDown={async (event: React.KeyboardEvent<HTMLDivElement>) => {
+                    //fetch the node and section
+                    const { selection, node } = getCurrentlyEditedElement()
+
+                    // get the id of the current editable htmlElement
+                    id = node.id;
+
+                    // get the caretPosition of the current editable htmlElement
+                    currentPosition = selection!.focusOffset;
+
+                    // get the imputed text on the current editable htmlElement
+                    inputKey = event.key;
+
+                    // fetch all the selected texts
+                    const selectedValues = getSelectedElements();
+
+                    console.log("onKeyDown node", event, node)
+                    if (event.code === "Backspace" || event.code === "Delete") {
+                        if (node.textContent.length === 1) {
+                            event.preventDefault()
+                            // removedValue({ node });
+                            const nodeParent = node.parentElement;
+                            node.remove();
+                            if (nodeParent && nodeParent.children.length === 0)
+                                nodeParent.remove()
+                            alert("here");
+                        }
+                    }
+                    // await selectBasedUpdate({ event, selectedValues, selection: selection! })
+
+                    // if (selectedValues.length > 0 && (event.key.length === 1 || event.code === "Backspace" || event.code === "Delete" || event.code === "Enter")) {
+                    //     event.preventDefault();
+                    // }
+
+                    // if (event.code === "Enter") {
+                    //     event.preventDefault();
+                    // }
+                    // else if (event.code === "Tab") {
+                    //     event.preventDefault();
+                    // }
+                    // else if (event.code === "Backspace" || event.code === "Delete") {
+                    //     if (selectedValues.length === 0 && node.textContent.length === 1) {
+                    //         event.preventDefault()
+                    //         removedValue({ node });
+                    //     }
+
+                    // }
+                    // console.log(event.key, event.code);
+
+
+                }}
+                onPaste={(event) => {
                     event.preventDefault();
-                }
-                else if (event.code === "Backspace" || event.code === "Delete") {
-                    if (selectedValues.length === 0 && node.textContent.length === 1) {
-                        event.preventDefault()
-                        removedValue({ node });
-                    }
+                }}
+            />
 
-                }
-
-                console.log("getContents", getContents())
-                console.log("getAllChildren", getAllChildren())
-                console.log("getRoots", getRoots())
-
-            }}
-            onPaste={(event) => {
-                event.preventDefault();
-            }}
-        />
-
+        </>
     )
 }
 
