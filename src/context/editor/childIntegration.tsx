@@ -1,14 +1,13 @@
 
-import { EditorStateChildren } from '@/interface/editor';
+import { Editor, EditorStateContentType } from '@/interface/editor';
 import { h1Element, linkElement, pElement, spanChild } from './typography';
+import { getChildren, getContent } from '@/utils/editor/data';
 
 export const childIntegration = (
     {
         editorStateData,
-        indexLevel,
     }: {
-        editorStateData: EditorStateChildren,
-        indexLevel: number[],
+        editorStateData: EditorStateContentType,
     }
 ) => {
     let parentElement: HTMLElement;
@@ -16,23 +15,24 @@ export const childIntegration = (
 
 
     if (editorStateData.type === "InlineLink") {
-        parentElement = linkElement({ editorStateData, indexLevel: indexLevel })
+        parentElement = linkElement({ editorStateData })
     }
     else if (editorStateData.type === "H1") {
-        parentElement = h1Element({ editorStateData, indexLevel: indexLevel })
+        parentElement = h1Element({ editorStateData })
     }
     else {
-        if (indexLevel.length > 1)
-            parentElement = spanChild({ editorStateData, indexLevel: indexLevel })
+        if (editorStateData.parentId)
+            parentElement = spanChild({ editorStateData })
         else
-            parentElement = pElement({ editorStateData, indexLevel: indexLevel })
+            parentElement = pElement({ editorStateData })
     }
 
     if (editorStateData.children) {
-        editorStateData.children.map((value, index) => {
+        const editableStatChildren = getChildren({ parentId: editorStateData.children });
+        Object.values(editableStatChildren).map((value, index) => {
+            const editableState = getContent({ id: value.contentId })
             childElement = childIntegration({
-                editorStateData: value,
-                indexLevel: [...indexLevel, index]
+                editorStateData: editableState,
             })
             parentElement.appendChild(childElement);
         })
@@ -40,13 +40,12 @@ export const childIntegration = (
 
     if (editorStateData.content != null) {
         let hasChild = false;
-        if (editorStateData.type != "P" || (editorStateData.type == "P" && indexLevel.length === 1)) {
+        if (editorStateData.type != "P" || (editorStateData.type == "P" && !editorStateData.parentId)) {
             hasChild = true;
         }
         if (hasChild) {
             childElement = spanChild({
-                editorStateData: editorStateData,
-                indexLevel: [...indexLevel, 0],
+                editorStateData: editorStateData
             })
             parentElement.appendChild(childElement);
         }

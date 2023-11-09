@@ -1,24 +1,20 @@
-import { EditorStateChildren } from '@/interface/editor';
+import { EditorStateContentType } from '@/interface/editor';
 
 export const spanChild = (
     {
         editorStateData,
-        indexLevel,
     }: {
-        editorStateData: EditorStateChildren,
-        indexLevel: number[],
+        editorStateData: EditorStateContentType,
     }
 ) => {
-    const id = `editor-${editorStateData.id}`;
+    const id = editorStateData.id;
     const element = document.createElement("span");
     element.setAttribute('id', id);
     element.setAttribute('key', id);
-    element.setAttribute(
-        'data-index-level',
-        JSON.stringify(indexLevel)
-    );
     if (editorStateData.className)
         element.className = editorStateData.className;
+
+
     if (editorStateData.content)
         element.textContent = editorStateData.content;
     else {

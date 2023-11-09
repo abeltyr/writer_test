@@ -1,34 +1,51 @@
 export type Editor = {
   id: string;
-  editorVersion: string;
   editorState: EditorState;
+  editorVersion: string;
   source: string;
   version: string;
   lastSaved: string;
 };
 
+export type ValueType = {
+  contentId: string;
+  parentId?: string;
+};
+
 export type EditorState = {
-  root: EditorStateChildren[];
+  root: EditorRootType;
+  children: EditorChildrenType;
+  content: EditorContentType;
   rule: EditorStateRule;
 };
 
-export type EditorStateChildren = {
+export type EditorRootType = string[];
+
+export type EditorChildrenType = {
+  [parentId: string]: ValueType[];
+};
+
+export type EditorContentType = {
+  [id: string]: EditorStateContentType;
+};
+
+export type EditorStateContentType = {
   id: string;
+  type: EditorType;
   format?: TextAlignment;
   mode?: string;
   className: string | "";
-  children?: EditorStateChildren[];
+  children?: string;
   content?: string;
-  type: EditorType;
   indent: number | 0;
   direction: string;
   disabled?: boolean;
-  ref?: any;
   additional?: {
     link?: EditorLinkAttrs;
     assets?: EditorAssetsAttrs;
     ytVideo?: EditorYoutubeVideoAttrs;
   };
+  parentId?: string;
 };
 
 export type EditorStateRule = {
@@ -85,4 +102,14 @@ export type AssetsConstrain = {
   maxWidth?: string | number;
   minHeight?: string | number;
   minWidth?: string | number;
+};
+
+export type SelectorType = {
+  id: string;
+  node: HTMLElement;
+  fullySelected: boolean;
+  selectedText: string;
+  wholeText: string;
+  startPos: number;
+  endPos: number;
 };

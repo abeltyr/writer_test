@@ -1,13 +1,6 @@
-export const getSelectedElements = (): {
-    id: string,
-    node: HTMLElement,
-    fullySelected: boolean,
-    selectedText: string,
-    indexLevel: number[],
-    wholeText: string,
-    startPos: number,
-    endPos: number
-}[] => {
+import { SelectorType } from '@/interface/editor';
+
+export const getSelectedElements = (): SelectorType[] => {
     const selection = window.getSelection();
     if (selection!.rangeCount > 0) {
         const range = selection!.getRangeAt(0);
@@ -52,9 +45,6 @@ export const getSelectedElements = (): {
                     endPos = nodeRange.endOffset;
                 }
 
-
-                const indexLevel = JSON.parse(value.parentElement.getAttribute("data-index-level"))
-
                 const selectedText = nodeText!.slice(startPos, endPos);
 
                 // setup the data that is going to be deleted
@@ -63,7 +53,6 @@ export const getSelectedElements = (): {
                     node: value.parentElement,
                     fullySelected: selectedText === nodeText,
                     selectedText: selectedText,
-                    indexLevel,
                     wholeText: nodeText,
                     startPos,
                     endPos

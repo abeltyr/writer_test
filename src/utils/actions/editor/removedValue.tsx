@@ -1,39 +1,21 @@
-import { Editor } from '@/interface/editor';
-import { getNestedArray } from '@/utils/editors';
-import { nullifyValue } from '@/utils/actions/editor';
+import { getContent, removeChildrenContent, removeContent } from '@/utils/editor/data';
 
-export const removedValue = (
-    {
-        indexLevel,
-        node,
-        updatedDataView,
+export const removedValue = ({ node }: { node: any }) => {
+    const contentId = node.id;
+    const nodeParent = node.parentElement;
+    node.remove();
 
-    }: {
-        indexLevel: number[],
-        node: any,
-        updatedDataView: Editor
-    }) => {
+    if (nodeParent && nodeParent.children.length === 0)
+        nodeParent.remove()
 
-    const newIndexLevel = [...indexLevel];
+    const content = getContent({ id: contentId });
+    if (content.parentId) {
+        removeChildrenContent({ parentId: content.parentId, contentId: contentId })
+    } else {
+        removeContent({ id: contentId })
 
-    let removedData = getNestedArray({
-        editorState: updatedDataView.editorState.root,
-        indexLevel: [...newIndexLevel],
-    })
-
-    if (removedData) {
-        const nodeParent = node.parentElement;
-        node.remove();
-        if (nodeParent.children.length === 0) {
-            newIndexLevel.pop();
-            if (nodeParent)
-                nodeParent.remove()
-        }
-
-        nullifyValue({
-            indexLevel: newIndexLevel,
-            updatedDataView,
-        })
     }
+
+    return true
 
 }
